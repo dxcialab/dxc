@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Dashboard Santander | DXC Technology</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="msal-browser.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f4f4f0;color:#1a1a1a;min-height:100vh}
@@ -284,53 +283,76 @@ let DB={}, currentYear='2026', activePeriod=new Set();
 let filterMgr='all', filterEmp='', filterWbs='all';
 let ssMgr, ssEmp, ssWbs, ssYear;
 
-// ── MICROSOFT GRAPH / SHAREPOINT ─────────────────────────
-const MSAL_CFG={
-  auth:{
-    clientId:'29b7b569-0a1b-47be-9f91-efc4922337ae',
-    authority:'https://login.microsoftonline.com/93f33571-550f-43cf-b09f-cd331338d086',
-    redirectUri:window.location.origin+window.location.pathname
-  },
-  cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:false}
-};
+// ── MICROSOFT GRAPH / SHAREPOINT (OAuth2 PKCE nativo — sin librerías) ──
+const CLIENT_ID='29b7b569-0a1b-47be-9f91-efc4922337ae';
+const TENANT_ID='93f33571-550f-43cf-b09f-cd331338d086';
+const REDIRECT_URI=window.location.origin+window.location.pathname;
 const SP_DRIVE='b!NB0ymBdpGEecr-CT6Jzv_2or8MeglMlMlG-J4QmwFiRtmw8QOm1ATIXD5-hMtztx';
-const SP_FOLDER='01LIYJFQYGZ7XOQMD2W5HYFH5JYOV2FSLI'; // Dashboard_Cado/2026
-const GRAPH_SCOPES=['Files.Read.All','Sites.Read.All'];
-let _msalApp=null;
+const SP_FOLDER='01LIYJFQYGZ7XOQMD2W5HYFH5JYOV2FSLI';
+const SCOPES='Files.Read.All Sites.Read.All User.Read offline_access';
+let _cachedToken=null;
+let _tokenExpiry=0;
 
-function waitForMsal(){
-  return new Promise((resolve,reject)=>{
-    if(typeof msal!=='undefined') return resolve();
-    let t=0;
-    const iv=setInterval(()=>{
-      if(typeof msal!=='undefined'){clearInterval(iv);resolve();}
-      else if((t+=200)>8000){clearInterval(iv);reject(new Error('MSAL no cargó (timeout)'));}
-    },200);
-  });
+function b64url(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
 }
-
-async function getMsal(){
-  await waitForMsal();
-  if(!_msalApp){
-    _msalApp=new msal.PublicClientApplication(MSAL_CFG);
-    await _msalApp.initialize();
-    // Manejar redirect response (por si vuelve de login redirect)
-    await _msalApp.handleRedirectPromise();
-  }
-  return _msalApp;
+async function generatePKCE(){
+  const verifier=b64url(crypto.getRandomValues(new Uint8Array(96)));
+  const challenge=b64url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));
+  return{verifier,challenge};
 }
 
 async function getToken(){
-  const app=await getMsal();
-  const accounts=app.getAllAccounts();
-  if(accounts.length>0){
-    try{
-      const r=await app.acquireTokenSilent({scopes:GRAPH_SCOPES,account:accounts[0]});
-      return r.accessToken;
-    }catch(e){/* fallback to popup */}
-  }
-  const r=await app.acquireTokenPopup({scopes:GRAPH_SCOPES});
-  return r.accessToken;
+  // Devolver token cacheado si sigue válido
+  if(_cachedToken && Date.now()<_tokenExpiry-30000) return _cachedToken;
+
+  const{verifier,challenge}=await generatePKCE();
+  const state=Math.random().toString(36).slice(2);
+  sessionStorage.setItem('pkce_v',verifier);
+  sessionStorage.setItem('pkce_s',state);
+
+  const authUrl=`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize`
+    +`?client_id=${CLIENT_ID}`
+    +`&response_type=code`
+    +`&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`
+    +`&scope=${encodeURIComponent(SCOPES)}`
+    +`&code_challenge=${challenge}`
+    +`&code_challenge_method=S256`
+    +`&state=${state}`
+    +`&prompt=select_account`;
+
+  const popup=window.open(authUrl,'mslogin','width=520,height=640,left=400,top=100');
+  if(!popup) throw new Error('Popup bloqueado — permite popups para esta página');
+
+  const code=await new Promise((resolve,reject)=>{
+    const iv=setInterval(()=>{
+      try{
+        const u=new URL(popup.location.href);
+        if(u.origin===window.location.origin){
+          clearInterval(iv);popup.close();
+          const c=u.searchParams.get('code');
+          const err=u.searchParams.get('error_description')||u.searchParams.get('error');
+          if(c) resolve(c); else reject(new Error(err||'Login cancelado'));
+        }
+      }catch(e){/* cross-origin — esperando */}
+      if(popup.closed){clearInterval(iv);reject(new Error('Ventana de login cerrada'));}
+    },400);
+  });
+
+  const body=new URLSearchParams({
+    client_id:CLIENT_ID,grant_type:'authorization_code',
+    code,redirect_uri:REDIRECT_URI,
+    code_verifier:sessionStorage.getItem('pkce_v'),
+    scope:SCOPES
+  });
+  const res=await fetch(`https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,
+    {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  const data=await res.json();
+  if(data.error) throw new Error(data.error_description||data.error);
+  _cachedToken=data.access_token;
+  _tokenExpiry=Date.now()+(data.expires_in||3600)*1000;
+  return _cachedToken;
 }
 
 async function loginAndLoad(){
