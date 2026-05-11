@@ -5,24 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Dashboard Santander | DXC Technology</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-(function(){
-  var cdns=[
-    'https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/dist/msal-browser.min.js',
-    'https://unpkg.com/@azure/msal-browser@2.38.3/dist/msal-browser.min.js',
-    'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js'
-  ];
-  var i=0;
-  function loadNext(){
-    if(i>=cdns.length) return;
-    var s=document.createElement('script');
-    s.src=cdns[i++];
-    s.onerror=function(){loadNext();};
-    document.head.appendChild(s);
-  }
-  loadNext();
-})();
-</script>
+<script src="msal-browser.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f4f4f0;color:#1a1a1a;min-height:100vh}
