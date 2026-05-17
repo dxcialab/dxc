@@ -21,6 +21,12 @@ header{background:linear-gradient(90deg,#0f1117 0%,#1c1c30 100%);padding:0 22px;
 .btn-folder-sec:hover{background:rgba(255,255,255,.16);color:#fff}
 .btn-reset{background:rgba(255,255,255,.07);color:#999;border:1px solid rgba(255,255,255,.13);padding:6px 11px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:600}
 .btn-reset:hover{background:rgba(220,60,50,.3);color:#fff}
+.btn-hist{background:linear-gradient(135deg,#27ae60,#219653);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;transition:opacity .15s;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.btn-hist:hover{opacity:.85}
+.hist-tab{background:none;border:none;padding:10px 14px;font-size:12px;font-weight:600;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.hist-tab.active{color:#D87050;border-bottom-color:#D87050;background:rgba(245,160,32,.06)}
+.hist-tab:hover{color:#D87050}
+.hist-panel{height:100%;overflow:auto}
 .filters{background:#fff;border-bottom:1px solid #e0e0d8;padding:8px 22px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:76px;z-index:400;box-shadow:0 1px 5px rgba(0,0,0,.06)}
 .fg{display:flex;align-items:center;gap:5px;position:relative}
 .fg label{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
@@ -178,8 +184,11 @@ tr.gh td{background:#f0f0e8;color:#777;font-weight:700;font-size:10px;text-trans
   <div class="hright">
     <div class="hnote">⚠ Empleados sin facturación al Santander en los 2 últimos meses no aparecen</div>
     <div class="hbadge" id="hbadge">Sin datos</div>
-    <button class="btn-folder" onclick="loginAndLoad()">🔑 Cargar desde SharePoint</button>
-    <button class="btn-folder-sec" onclick="selectFolder()" title="Alternativa: carpeta local OneDrive">📁 Carpeta local</button>
+    <button class="btn-hist" onclick="showHistorico()">📊 Histórico</button>
+    <button class="btn-hist" style="background:linear-gradient(135deg,#2980b9,#1a6fa0)" onclick="showVacaciones()">🌴 Vacaciones</button>
+    <button class="btn-hist" style="background:linear-gradient(135deg,#e74c3c,#c0392b)" onclick="showRiesgo()">📈 Proyección</button>
+    <button class="btn-hist" style="background:linear-gradient(135deg,#7b2d8b,#5c1f6e)" onclick="showActual()" title="Cargar fichero Control Labor y ver horas reales facturadas">📋 Actual</button>
+    <button class="btn-folder-sec" onclick="selectFolder()" title="Cargar ficheros CADO desde carpeta local OneDrive">📁 Carpeta local</button>
     <button class="btn-reset" onclick="clearData()" title="Borrar todos los datos cargados">🗑 Borrar datos</button>
   </div>
 </header>
@@ -211,11 +220,11 @@ tr.gh td{background:#f0f0e8;color:#777;font-weight:700;font-size:10px;text-trans
 <div class="legend" id="legend"></div>
 
 <main>
-  <div class="fs-bar" id="fs-bar">
+  <div class="fs-bar" id="fs-bar" style="display:none">
     <div class="fs-icon">📂</div>
     <div class="fs-text">
       <strong>Carpeta OneDrive no conectada</strong>
-      <span>Conecta tu carpeta DXCTIME_MES (o la subcarpeta 2026) para cargar datos automáticamente</span>
+      <span>Conecta tu carpeta DXCTIME_MES (o la subcarpeta 2026) para cargar datos adicionales</span>
     </div>
     <div class="fs-right">
       <button class="btn btn-p" onclick="selectFolder()">📁 Seleccionar carpeta</button>
@@ -278,10 +287,34 @@ const CC={
 const MO=[["2026-01", "Ene"], ["2026-02", "Feb"], ["2026-03", "Mar"], ["2026-04", "Abr"], ["2026-05", "May"], ["2026-06", "Jun"], ["2026-07", "Jul"], ["2026-08", "Ago"], ["2026-09", "Sep"], ["2026-10", "Oct"], ["2026-11", "Nov"], ["2026-12", "Dic"]];
 const MN=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const SK='dxc_sant_v4';
-const SEED={"employees":{"11792128":{"pers_no":"11792128","name":"ABEL BORDON","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_123":40.0,"atype_110":16.0,"atype_705":2.25,"proj_santander":117.75},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.03"]},"11793815":{"pers_no":"11793815","name":"ABEL QUESADA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_705":2.55,"proj_santander":133.45,"atype_123":16.0,"atype_760":8.0},"2026-02":{"atype_705":2.85,"proj_santander":149.15,"atype_760":8.0},"2026-03":{"atype_705":0.15,"proj_santander":23.85,"atype_760":8.0,"atype_120":24.0,"atype_121":120.0},"2026-04":{"atype_121":160.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11588811":{"pers_no":"11588811","name":"ADRIAN YUSTE","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"proj_santander":151.0,"atype_705":1.0,"atype_121":8.0},"2026-02":{"atype_705":1.0,"proj_santander":159.0},"2026-03":{"proj_santander":173.7,"atype_705":2.3},"2026-04":{"atype_110":16.0,"proj_santander":150.95,"atype_705":1.05,"atype_121":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11790733":{"pers_no":"11790733","name":"AGUSTIN TAMAMES","manager":"Jesús González Herrera","months":{"2026-01":{"atype_110":16.0,"atype_123":16.0,"atype_775":112.0,"proj_santander":32.0},"2026-02":{"proj_santander":144.0,"atype_123":16.0},"2026-03":{"atype_720":2.0,"proj_santander":174.0},"2026-04":{"atype_720":2.5,"proj_santander":149.5,"atype_110":16.0,"atype_120":8.0}},"wbs_codes":["ES1-7ST81.01.01","ES1-7SG11.01.01"]},"11787152":{"pers_no":"11787152","name":"ALEJANDRO ABEAL","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_705":2.85,"proj_santander":149.15},"2026-02":{"atype_705":2.7,"proj_santander":141.3,"atype_120":8.0,"atype_110":8.0},"2026-03":{"atype_705":2.85,"proj_santander":149.15,"atype_110":8.0,"atype_120":16.0},"2026-04":{"atype_120":8.0,"atype_110":16.0,"atype_705":2.85,"proj_santander":149.15}},"wbs_codes":["ES1-7ST79.02.01"]},"11792138":{"pers_no":"11792138","name":"ALEJANDRO BRAVO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"21526567":{"pers_no":"21526567","name":"ALEJANDRO GUERRERO","manager":"Agustin Rabano Trancon","months":{"2026-01":{"proj_santander":73.0,"atype_750":55.0,"atype_110":16.0,"atype_123":32.0},"2026-02":{"proj_santander":98.0,"atype_750":62.0},"2026-03":{"proj_santander":106.5,"atype_750":69.5},"2026-04":{"proj_santander":96.5,"atype_750":63.5,"atype_110":16.0}},"wbs_codes":["ES1-1AC10.01.01","ES1-7SG10.01.01","ES1-7ST81.01.01","ES1-7CEL7.01.06","ES1-7EH02.10.07","ES1-7CA36.25.02"]},"11794169":{"pers_no":"11794169","name":"ALVARO CASTRO","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_120":8.0,"proj_santander":149.15,"atype_705":2.85},"2026-02":{"atype_123":8.0,"proj_santander":149.45,"atype_705":2.55},"2026-03":{"atype_705":3.3,"proj_santander":167.7,"atype_750":5.0},"2026-04":{"atype_120":32.0,"atype_705":2.4,"proj_santander":125.6,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11744238":{"pers_no":"11744238","name":"ANDRES OLIVERI","manager":"Javier Civera Hernández","months":{"2026-01":{"proj_santander":141.3,"atype_705":2.7,"atype_120":8.0,"atype_110":16.0,"atype_123":8.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11786917":{"pers_no":"11786917","name":"ANTON LOKHVITSKIY","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":2.4,"proj_santander":125.6,"atype_123":32.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":2.85,"proj_santander":149.15,"atype_120":24.0},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST79.02.01"]},"11792208":{"pers_no":"11792208","name":"ANTONIO JESUS ORTEGA","manager":"Stefan Milkov","months":{"2026-01":{"proj_santander":153.9,"atype_110":16.0,"atype_705":2.1,"atype_760":4.0},"2026-02":{"atype_705":2.25,"proj_santander":153.75,"atype_760":4.0},"2026-03":{"atype_123":16.0,"atype_705":3.0,"proj_santander":153.0,"atype_760":4.0},"2026-04":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11711366":{"pers_no":"11711366","name":"ANTONIO MAESTRO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"proj_santander":125.7,"atype_123":32.0,"atype_110":16.0,"atype_705":0.3,"atype_730":2.0},"2026-02":{"atype_705":5.7,"proj_santander":154.3},"2026-03":{"atype_705":2.25,"proj_santander":173.75},"2026-04":{"proj_santander":141.45,"atype_705":2.55,"atype_110":16.0,"atype_123":16.0}},"wbs_codes":["ES1-7ST58.01.12"]},"20144164":{"pers_no":"20144164","name":"ANTONIO ROMERO","manager":"Alicia Ojeda Dissez","months":{"2026-01":{"atype_110":16.0,"atype_120":8.0,"proj_santander":152.0},"2026-02":{"proj_santander":160.0},"2026-03":{"proj_santander":168.0,"atype_700":8.0},"2026-04":{"proj_santander":152.0,"atype_110":16.0,"atype_750":8.0}},"wbs_codes":["ES1-7ST75.01.02","ES1-7ST58.01.04","ES1-7ST76.01.01","ES1-7ST58.01.09","ES1-7ST75.01.01","ES1-7ST81.01.01","ES1-1ST74.01.11","ES1-7ST79.02.01"]},"11794513":{"pers_no":"11794513","name":"AROA CORTIJO","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_730":24.0,"proj_santander":112.0,"atype_110":16.0,"atype_123":24.0},"2026-02":{"proj_santander":160.0},"2026-03":{"proj_santander":176.0},"2026-04":{"proj_santander":152.0,"atype_110":16.0,"atype_123":8.0}},"wbs_codes":["ES1-7MAP6.01.01","ES1-7ST81.01.01"]},"11792135":{"pers_no":"11792135","name":"BORJA CRISTOBAL","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_123":16.0,"atype_705":2.7,"proj_santander":141.3},"2026-02":{"proj_santander":142.05,"atype_123":16.0,"atype_705":1.95},"2026-03":{"atype_705":2.25,"proj_santander":117.75,"atype_123":40.0,"atype_120":16.0},"2026-04":{"atype_120":40.0,"atype_110":16.0,"atype_705":2.25,"proj_santander":117.75}},"wbs_codes":["ES1-7ST81.01.01"]},"11792216":{"pers_no":"11792216","name":"BYRON SUASTEGUI","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"proj_santander":64.0,"atype_110":16.0,"atype_123":88.0,"atype_705":2.0,"atype_760":6.0},"2026-02":{"atype_705":2.0,"atype_760":6.0,"proj_santander":152.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11727851":{"pers_no":"11727851","name":"CARLOS COCO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_705":2.25,"proj_santander":117.75},"2026-02":{"atype_705":2.85,"proj_santander":149.15,"atype_110":8.0},"2026-03":{"atype_705":2.85,"proj_santander":149.15,"atype_110":8.0,"atype_120":16.0},"2026-04":{"atype_705":2.7,"proj_santander":138.8,"atype_123":10.5,"atype_120":8.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.09"]},"11724350":{"pers_no":"11724350","name":"CARLOS DE LA FUENTE","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_705":2.7,"proj_santander":141.3,"atype_123":16.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.15,"proj_santander":164.85,"atype_123":8.0},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST75.01.01"]},"21526463":{"pers_no":"21526463","name":"CARMEN CUENCA","manager":"Mar Garcia Gracia","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"proj_santander":120.0},"2026-02":{"proj_santander":160.0},"2026-03":{"proj_santander":176.0},"2026-04":{"proj_santander":160.0,"atype_110":16.0}},"wbs_codes":["ES1-7AC10.01.01.01","ES1-7NX18.01.01.02","ES1-7ST81.01.01","BE1-ITOI1.01.80","ES1-7CM34.01.01","ES1-7SE38.01.01.01","ES1-7FE28.01.02","ES1-7NE05.01.01","ES1-7LO93.10.01","ES1-7CA36.24.02"]},"11748387":{"pers_no":"11748387","name":"CRISTIAN DIEGUEZ","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":1.95,"proj_santander":102.05,"atype_123":56.0},"2026-02":{"atype_705":2.85,"proj_santander":149.15,"atype_110":8.0},"2026-03":{"atype_705":3.15,"proj_santander":164.85,"atype_110":8.0},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.09"]},"11787601":{"pers_no":"11787601","name":"CRISTIAN FUENTES","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_705":0.75,"proj_santander":159.25,"atype_110":16.0},"2026-02":{"proj_santander":160.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":2.85,"proj_santander":149.15,"atype_110":24.0}},"wbs_codes":["ES1-7ST79.02.01","ES1-8VX13.20.03"]},"11792219":{"pers_no":"11792219","name":"CRISTIAN GARCIA","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_705":2.55,"proj_santander":133.45,"atype_110":16.0,"atype_123":24.0},"2026-02":{"proj_santander":157.0,"atype_705":3.0},"2026-03":{"atype_120":104.0,"atype_705":1.35,"proj_santander":70.65},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792204":{"pers_no":"11792204","name":"CRISTIAN MORENO","manager":"Stefan Milkov","months":{"2026-01":{"proj_santander":106.05,"atype_110":16.0,"atype_705":1.95,"atype_123":40.0,"atype_120":8.0,"atype_760":4.0},"2026-02":{"atype_705":2.85,"proj_santander":145.15,"atype_120":8.0,"atype_760":4.0},"2026-03":{"proj_santander":167.7,"atype_760":5.0,"atype_705":3.3},"2026-04":{"atype_705":2.85,"proj_santander":149.15,"atype_110":16.0,"atype_120":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11787290":{"pers_no":"11787290","name":"CRISTINA GUTIERREZ","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_110":16.0,"proj_santander":156.9,"atype_705":3.1},"2026-02":{"atype_705":2.25,"proj_santander":117.75,"atype_123":40.0},"2026-03":{"proj_santander":156.0,"atype_123":16.0,"atype_705":4.0},"2026-04":{"proj_santander":154.0,"atype_705":6.0,"atype_110":16.0}},"wbs_codes":["ES1-7CM34.01.01","ES1-7ST72.02.01"]},"11792267":{"pers_no":"11792267","name":"DANIEL MARTINEZ","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"proj_santander":116.0,"atype_760":4.0},"2026-02":{"proj_santander":156.0,"atype_760":4.0},"2026-03":{"proj_santander":140.0,"atype_760":4.0,"atype_123":32.0},"2026-04":{"atype_705":2.85,"proj_santander":157.15,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11769695":{"pers_no":"11769695","name":"DANIEL RINCON","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_705":2.85,"proj_santander":149.15},"2026-02":{"proj_santander":157.0,"atype_705":3.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11799373":{"pers_no":"11799373","name":"DAVID FERNANDEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":64.0,"atype_705":1.8,"proj_santander":94.2},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST76.01.01"]},"11792134":{"pers_no":"11792134","name":"DAVID VAZQUEZ","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_705":2.7,"proj_santander":141.3,"atype_110":16.0,"atype_123":16.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":2.55,"proj_santander":133.45,"atype_123":40.0},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11788891":{"pers_no":"11788891","name":"FACUNDO HERNAN FAVALORO","manager":"Alejandro Guerrero Mendoza","months":{"2026-01":{"atype_110":16.0,"proj_santander":56.0,"atype_123":104.0},"2026-02":{"atype_720":1.0,"proj_santander":159.0},"2026-03":{"atype_720":5.0,"proj_santander":171.0},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11788783":{"pers_no":"11788783","name":"FELIX RUIZ DEL MORAL","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"proj_santander":143.1,"atype_705":0.9,"atype_123":16.0},"2026-02":{"atype_705":1.2,"proj_santander":158.8},"2026-03":{"atype_705":1.2,"proj_santander":150.8,"atype_123":24.0},"2026-04":{"atype_705":4.35,"proj_santander":123.65,"atype_110":16.0,"atype_123":32.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11778958":{"pers_no":"11778958","name":"FERNANDO ENMANUEL DE ESTEVES","manager":"Silvia Tortosa Mendez","months":{"2026-01":{"proj_santander":82.0,"atype_110":16.0,"atype_735":30.0,"atype_123":8.0}},"wbs_codes":["ES1-7AF01.01.02","ES1-7SE30.07.10","ES1-7ST81.03.01","ES1-7THL1.01.01","ES1-7TEK1.01.01"]},"11742438":{"pers_no":"11742438","name":"FERNANDO FERNANDEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0},"2026-02":{"atype_705":2.7,"proj_santander":141.3,"atype_123":16.0},"2026-03":{"atype_705":2.85,"proj_santander":149.15,"atype_123":24.0},"2026-04":{"atype_120":16.0,"atype_110":16.0,"atype_705":2.7,"proj_santander":141.3}},"wbs_codes":["ES1-7ST58.01.04"]},"11794112":{"pers_no":"11794112","name":"FERNANDO JARAUTA","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":24.0,"atype_123":16.0,"atype_705":2.4,"proj_santander":129.6,"atype_760":4.0},"2026-02":{"atype_705":2.85,"proj_santander":153.15,"atype_760":4.0},"2026-03":{"atype_705":3.0,"proj_santander":152.0,"atype_110":8.0,"atype_123":8.0,"atype_760":5.0},"2026-04":{"atype_123":8.0,"atype_110":24.0,"atype_705":2.55,"atype_760":1.0,"proj_santander":140.45}},"wbs_codes":["ES1-7ST81.01.01"]},"11788575":{"pers_no":"11788575","name":"FRANCISCO JAVIER SALAFRANCA","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"proj_santander":159.55,"atype_705":0.45},"2026-02":{"atype_705":6.4,"proj_santander":153.6},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":2.7,"proj_santander":141.3,"atype_120":16.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11788766":{"pers_no":"11788766","name":"FRANCISCO PEREZ","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_120":40.0,"proj_santander":112.0},"2026-02":{"atype_705":0.6,"proj_santander":159.4},"2026-03":{"atype_705":3.15,"proj_santander":156.85,"atype_120":16.0},"2026-04":{"atype_120":8.0,"atype_110":16.0,"atype_705":2.7,"proj_santander":141.3,"atype_123":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11796510":{"pers_no":"11796510","name":"GABRIEL MARCHANTE","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_120":16.0,"atype_705":2.7,"proj_santander":141.3},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":2.55,"proj_santander":133.45,"atype_121":40.0},"2026-04":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0}},"wbs_codes":["ES1-7ST81.01.03"]},"80075373":{"pers_no":"80075373","name":"GARRY ALOIS LOUIS ROBBRECHT","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_123":8.0,"atype_110":16.0,"atype_705":2.85,"proj_santander":149.15},"2026-02":{"atype_705":2.7,"proj_santander":141.3,"atype_123":16.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.12"]},"11800384":{"pers_no":"11800384","name":"GONZALO MARTI","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"proj_santander":159.0,"atype_705":1.0},"2026-02":{"atype_705":1.0,"proj_santander":159.0},"2026-03":{"atype_705":3.45,"proj_santander":172.55},"2026-04":{"proj_santander":157.15,"atype_110":16.0,"atype_705":2.85}},"wbs_codes":["ES1-7ST81.01.01"]},"11792126":{"pers_no":"11792126","name":"GUILLERMO COLLADO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_705":2.25,"proj_santander":117.75,"atype_110":16.0,"atype_123":40.0},"2026-02":{"atype_705":2.7,"proj_santander":141.3,"atype_123":16.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":1.95,"proj_santander":102.05,"atype_110":16.0,"atype_120":56.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11794499":{"pers_no":"11794499","name":"GUSTAVO RAMOS","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"proj_santander":153.3,"atype_705":2.7,"atype_760":4.0},"2026-02":{"proj_santander":153.15,"atype_760":4.0,"atype_705":2.85},"2026-03":{"atype_705":2.7,"proj_santander":136.3,"atype_760":5.0,"atype_123":32.0},"2026-04":{"atype_123":56.0,"atype_110":24.0,"atype_705":1.8,"proj_santander":94.2}},"wbs_codes":["ES1-7ST81.01.01"]},"11793365":{"pers_no":"11793365","name":"HECTOR GOMEZ","manager":"Stefan Milkov","months":{"2026-01":{"proj_santander":153.3,"atype_110":16.0,"atype_705":2.7,"atype_760":4.0},"2026-02":{"atype_705":2.85,"proj_santander":153.15,"atype_760":4.0},"2026-03":{"atype_705":3.3,"proj_santander":167.7,"atype_760":5.0},"2026-04":{"atype_110":24.0,"proj_santander":133.45,"atype_760":8.0,"atype_123":8.0,"atype_705":2.55}},"wbs_codes":["ES1-7ST81.01.01"]},"11792221":{"pers_no":"11792221","name":"HEINRICH ALESSANDRO MEDINA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_730":128.0,"atype_123":24.0,"atype_760":8.0},"2026-02":{"atype_730":32.0,"atype_760":8.0,"atype_123":56.0,"proj_santander":24.0,"atype_120":40.0},"2026-03":{"atype_730":176.0},"2026-04":{"atype_110":16.0,"proj_santander":128.0,"atype_730":32.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11740497":{"pers_no":"11740497","name":"INAKI SANTAMARIA","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_120":40.0,"proj_santander":120.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0}},"wbs_codes":["ES1-7ST58.01.12"]},"80116570":{"pers_no":"80116570","name":"ISABEL ZANUY","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_110":24.0,"atype_750":24.31,"proj_santander":111.69,"atype_123":16.0},"2026-02":{"atype_750":28.6,"proj_santander":131.4},"2026-03":{"atype_110":8.0,"atype_123":16.0,"atype_750":27.17,"proj_santander":124.83},"2026-04":{"atype_110":24.0,"atype_750":24.31,"proj_santander":111.69,"atype_123":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792265":{"pers_no":"11792265","name":"JAVI GONZALEZ","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"proj_santander":117.9,"atype_123":40.0,"atype_705":2.1},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.0,"proj_santander":157.0,"atype_123":16.0},"2026-04":{"atype_123":8.0,"atype_120":8.0,"atype_705":2.7,"proj_santander":141.3,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"75010506":{"pers_no":"75010506","name":"JAVIER CIVERA","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_110":16.0,"atype_123":24.0,"atype_750":24.31,"proj_santander":111.69},"2026-02":{"atype_750":28.6,"proj_santander":131.4},"2026-03":{"proj_santander":118.83,"atype_750":27.17,"atype_123":24.0,"atype_121":6.0},"2026-04":{"atype_120":16.0,"atype_110":16.0,"atype_750":25.74,"proj_santander":118.26}},"wbs_codes":["ES1-7ST58.01.04","ES1-7ST79.02.01","ES1-7ST81.01.01"]},"80116549":{"pers_no":"80116549","name":"JAVIER DE MIGUEL","manager":"Agustin Rabano Trancon","months":{"2026-01":{"atype_110":24.0,"atype_120":16.0,"proj_santander":72.0,"atype_750":64.0},"2026-02":{"proj_santander":84.0,"atype_750":76.0},"2026-03":{"proj_santander":84.0,"atype_110":8.0,"atype_120":32.0,"atype_750":52.0},"2026-04":{"atype_120":16.0,"atype_110":24.0,"proj_santander":88.0,"atype_750":48.0}},"wbs_codes":["ES1-1CDR2.01.01","ES1-7AC10.01.01.08","ES1-7SG10.01.01","ES1-7CM34.01.01","ES1-7ST81.01.01","ES1-7CDR3.01.01","ES1-7CA36.15.02","ES1-7SE38.01.01.01"]},"11744452":{"pers_no":"11744452","name":"JAVIER DIAZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":2.25,"proj_santander":117.75,"atype_110":16.0,"atype_123":16.0,"atype_120":24.0}},"wbs_codes":["ES1-7ST58.01.11"]},"11792217":{"pers_no":"11792217","name":"JAVIER ESCRIBANO","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":16.0,"atype_760":6.0,"atype_705":3.0,"proj_santander":135.0},"2026-02":{"atype_760":6.0,"atype_705":3.0,"proj_santander":151.0},"2026-03":{"atype_760":8.0,"atype_705":4.0,"proj_santander":164.0},"2026-04":{"atype_110":16.0,"proj_santander":151.0,"atype_760":6.0,"atype_705":3.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11724497":{"pers_no":"11724497","name":"JAVIER LAIN","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":32.0,"atype_705":2.4,"proj_santander":125.6},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":2.85,"proj_santander":149.15,"atype_123":8.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11794168":{"pers_no":"11794168","name":"JESUS COBOS","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_705":2.85,"proj_santander":157.15},"2026-02":{"atype_123":40.0,"atype_705":2.25,"proj_santander":117.75},"2026-03":{"atype_705":3.15,"proj_santander":172.85},"2026-04":{"atype_705":1.5,"proj_santander":78.5,"atype_110":24.0,"atype_120":16.0}},"wbs_codes":["ES1-7ST81.01.03"]},"11740463":{"pers_no":"11740463","name":"JESUS HERNANDEZ","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_705":2.85,"proj_santander":157.15},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792207":{"pers_no":"11792207","name":"JESUS VENTEO","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_120":8.0,"atype_705":2.7,"proj_santander":145.3,"atype_760":4.0},"2026-02":{"proj_santander":145.3,"atype_760":4.0,"atype_705":2.7,"atype_120":8.0},"2026-03":{"atype_705":3.15,"proj_santander":167.85,"atype_760":5.0},"2026-04":{"atype_120":8.0,"atype_705":2.85,"proj_santander":149.15,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792145":{"pers_no":"11792145","name":"JORDI ALEMANY","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_123":32.0,"atype_120":8.0,"proj_santander":113.9,"atype_705":2.1,"atype_760":4.0},"2026-02":{"atype_705":2.85,"proj_santander":145.15,"atype_120":8.0,"atype_760":4.0},"2026-03":{"atype_705":3.0,"proj_santander":152.0,"atype_760":5.0,"atype_700":16.0},"2026-04":{"atype_110":16.0,"atype_705":3.0,"atype_700":15.7,"proj_santander":141.3}},"wbs_codes":["ES1-7ST81.01.01"]},"11806309":{"pers_no":"11806309","name":"JORGE AREVALILLO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":2.1,"proj_santander":109.9,"atype_123":48.0},"2026-02":{"atype_123":24.0,"atype_705":2.55,"proj_santander":133.45},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":1.95,"proj_santander":102.05,"atype_120":56.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11768856":{"pers_no":"11768856","name":"JORGE GARCIA","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_705":2.1,"proj_santander":113.9,"atype_760":4.0},"2026-02":{"proj_santander":145.3,"atype_760":4.0,"atype_123":8.0,"atype_705":2.7},"2026-03":{"atype_705":3.15,"proj_santander":167.85,"atype_760":5.0},"2026-04":{"atype_705":2.85,"proj_santander":149.15,"atype_110":16.0,"atype_760":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11790744":{"pers_no":"11790744","name":"JORGE REMESEIRO","manager":"Stefan Milkov","months":{"2026-01":{"proj_santander":150.35,"atype_705":1.65,"atype_720":4.0,"atype_760":4.0,"atype_110":16.0},"2026-02":{"proj_santander":156.0,"atype_760":4.0},"2026-03":{"proj_santander":171.0,"atype_760":5.0},"2026-04":{"atype_705":0.15,"proj_santander":130.85,"atype_760":5.0,"atype_120":16.0,"atype_110":24.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792266":{"pers_no":"11792266","name":"JOSE LUIS ALVAREZ-OSSORIO","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":56.0,"atype_705":3.0,"proj_santander":101.0},"2026-02":{"atype_705":4.0,"proj_santander":132.0,"atype_123":24.0},"2026-03":{"atype_705":4.0,"proj_santander":172.0},"2026-04":{"atype_705":5.0,"proj_santander":139.0,"atype_110":16.0,"atype_120":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11724511":{"pers_no":"11724511","name":"JOSE MARIA AMBITE","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"proj_santander":40.0,"atype_730":120.0},"2026-02":{"atype_730":160.0},"2026-03":{"proj_santander":128.0,"atype_730":48.0},"2026-04":{"proj_santander":160.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04","ES1-7EH02.10.03","ES1-7FE28.01.06","ES1-7CM34.01.01"]},"11794373":{"pers_no":"11794373","name":"JUAN JOSE AVECILLA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_705":2.25,"proj_santander":117.75},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.0,"proj_santander":157.0,"atype_123":16.0},"2026-04":{"atype_120":8.0,"atype_110":24.0,"atype_705":2.55,"proj_santander":133.45,"atype_123":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"21526650":{"pers_no":"21526650","name":"JUAN MILICUA","manager":"Alejandro Guerrero Mendoza","months":{"2026-01":{"atype_110":16.0,"atype_720":2.0,"proj_santander":158.0},"2026-02":{"atype_720":2.0,"proj_santander":158.0},"2026-03":{"atype_720":2.0,"proj_santander":150.0,"atype_120":8.0,"atype_123":16.0},"2026-04":{"atype_123":8.0,"atype_110":16.0,"proj_santander":144.0,"atype_720":2.0,"atype_760":6.0}},"wbs_codes":["ES1-7CA36.25.02","ES1-1NX10.01.01","ES1-7ST58.01.04","ES1-7SL13.01.01","ES1-7NX16.01.01","ES1-7SL13.03.01"]},"11788190":{"pers_no":"11788190","name":"LORENZO SERRANO","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"proj_santander":158.5,"atype_705":1.5},"2026-02":{"atype_705":4.7,"proj_santander":147.3,"atype_120":8.0},"2026-03":{"atype_705":2.85,"proj_santander":149.15,"atype_120":24.0},"2026-04":{"atype_705":2.85,"proj_santander":149.15,"atype_110":16.0,"atype_120":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11796511":{"pers_no":"11796511","name":"LUIS GARCIA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":72.0,"atype_705":1.35,"proj_santander":70.65,"atype_120":16.0}},"wbs_codes":["ES1-7ST79.02.01"]},"11792162":{"pers_no":"11792162","name":"MANUEL LOPEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_123":8.0,"atype_110":16.0,"atype_705":2.55,"proj_santander":133.45,"atype_760":8.0,"atype_120":8.0},"2026-02":{"atype_705":2.55,"proj_santander":133.45,"atype_123":8.0,"atype_120":8.0,"atype_760":8.0},"2026-03":{"atype_705":3.15,"proj_santander":164.85,"atype_760":8.0},"2026-04":{"atype_110":16.0,"atype_705":2.85,"proj_santander":149.15,"atype_760":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792262":{"pers_no":"11792262","name":"MANUEL MARTIN","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0},"2026-02":{"proj_santander":119.25,"atype_123":40.0,"atype_705":0.75},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11796407":{"pers_no":"11796407","name":"MARCO BARRIOS","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_123":16.0,"atype_110":16.0,"atype_705":2.7,"proj_santander":141.3},"2026-02":{"atype_705":1.8,"proj_santander":94.2,"atype_120":24.0,"atype_121":40.0},"2026-03":{"atype_705":3.0,"proj_santander":157.0,"atype_120":16.0},"2026-04":{"atype_705":2.4,"proj_santander":125.6,"atype_120":32.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.03"]},"11799200":{"pers_no":"11799200","name":"MARIA ALBA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_123":8.0,"atype_110":16.0,"atype_121":152.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_110":24.0,"atype_705":2.85,"proj_santander":149.15}},"wbs_codes":["ES1-7ST76.01.01"]},"11792377":{"pers_no":"11792377","name":"MAURICIO ALTAMURA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_705":1.35,"proj_santander":70.65,"atype_760":8.0,"atype_123":80.0},"2026-02":{"atype_705":0.6,"proj_santander":151.4,"atype_760":8.0},"2026-03":{"proj_santander":164.85,"atype_705":3.15,"atype_760":8.0},"2026-04":{"atype_705":2.85,"proj_santander":149.15,"atype_110":16.0,"atype_760":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11575980":{"pers_no":"11575980","name":"MAYTE NAVARRO","manager":"Fcojavier Zamorano Sanchez","months":{"2026-01":{"atype_123":40.0,"atype_110":16.0,"proj_santander":115.0,"atype_760":5.0},"2026-02":{"proj_santander":156.0,"atype_760":4.0},"2026-03":{"atype_760":5.0,"proj_santander":155.0,"atype_123":16.0},"2026-04":{"atype_760":3.0,"proj_santander":149.0,"atype_110":16.0,"atype_123":8.0}},"wbs_codes":["ES1-7ST81.01.01","ES1-1AC10.98.02","ES1-7CM34.01.01"]},"11724380":{"pers_no":"11724380","name":"MIGUEL ANGEL LOPEZ","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_120":8.0,"atype_705":2.85,"proj_santander":149.15},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11792213":{"pers_no":"11792213","name":"MIGUEL ANGEL RINCON","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_120":40.0,"atype_110":16.0,"proj_santander":40.0,"atype_775":80.0}},"wbs_codes":["ES1-7ST81.01.01"]},"80166642":{"pers_no":"80166642","name":"MIGUEL MONTORO","manager":"Montserrat Carrasco Bellmunt","months":{"2026-01":{"atype_110":16.0,"proj_santander":136.0,"atype_123":24.0},"2026-02":{"proj_santander":160.0},"2026-03":{"proj_santander":150.0,"atype_120":16.0,"atype_760":10.0},"2026-04":{"atype_120":8.0,"atype_110":16.0,"proj_santander":142.0,"atype_760":10.0}},"wbs_codes":["ES1-1RD10.99.02","ES1-7THL1.01.01","ES1-7PC08.01.02.02","ES1-7ST81.01.01","ES1-7AF01.01.04"]},"11618972":{"pers_no":"11618972","name":"NICOLAS GONZALEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"proj_santander":128.0,"atype_120":32.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":1.65,"proj_santander":86.35,"atype_110":16.0,"atype_730":72.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11722940":{"pers_no":"11722940","name":"OSCAR TOJA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.0,"proj_santander":157.0,"atype_123":16.0},"2026-04":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0}},"wbs_codes":["ES1-7ST58.01.04"]},"21526801":{"pers_no":"21526801","name":"PILAR TARANCON","manager":"Mar Garcia Gracia","months":{"2026-01":{"atype_110":16.0,"proj_santander":152.0,"atype_123":8.0},"2026-02":{"proj_santander":160.0},"2026-03":{"proj_santander":176.0},"2026-04":{"proj_santander":160.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01","ES1-7EXP1.01.03"]},"11792131":{"pers_no":"11792131","name":"RANGEL YAHIR NARREA","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":2.1,"proj_santander":109.9,"atype_123":48.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.15,"proj_santander":164.85,"atype_123":8.0},"2026-04":{"atype_705":2.4,"proj_santander":125.6,"atype_110":16.0,"atype_123":32.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792163":{"pers_no":"11792163","name":"RUBEN FERNANDEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"proj_santander":117.75,"atype_705":2.25},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":1.95,"proj_santander":102.05,"atype_121":40.0,"atype_123":32.0},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.03"]},"11788743":{"pers_no":"11788743","name":"SAMUEL VAL","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"proj_santander":134.8,"atype_705":1.2,"atype_120":8.0,"atype_795":8.0},"2026-02":{"proj_santander":158.8,"atype_705":1.2},"2026-03":{"atype_705":3.3,"proj_santander":140.7,"atype_123":8.0,"atype_120":24.0},"2026-04":{"atype_705":2.85,"atype_110":16.0,"proj_santander":149.15,"atype_120":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11792148":{"pers_no":"11792148","name":"SANTIAGO RAMOS","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_705":3.0,"proj_santander":157.0},"2026-02":{"atype_705":2.85,"proj_santander":145.15,"atype_760":4.0,"atype_123":8.0},"2026-03":{"atype_705":3.3,"proj_santander":168.7,"atype_760":4.0},"2026-04":{"atype_705":3.0,"proj_santander":153.0,"atype_760":4.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11794038":{"pers_no":"11794038","name":"SANTIAGO ROLDAN","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_705":2.25,"proj_santander":137.75,"atype_123":16.0,"atype_760":4.0},"2026-02":{"atype_705":2.85,"proj_santander":145.15,"atype_760":4.0,"atype_120":8.0},"2026-03":{"atype_705":3.15,"proj_santander":167.85,"atype_760":5.0},"2026-04":{"atype_705":2.7,"proj_santander":141.3,"atype_110":16.0,"atype_123":8.0,"atype_120":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11788574":{"pers_no":"11788574","name":"SARA MAESO","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_705":5.0,"proj_santander":117.8,"atype_730":29.2,"atype_110":16.0,"atype_123":8.0},"2026-02":{"proj_santander":158.8,"atype_705":1.2},"2026-03":{"atype_123":18.0,"proj_santander":154.7,"atype_705":3.3},"2026-04":{"atype_110":16.0,"atype_705":2.85,"proj_santander":149.15,"atype_123":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"21526651":{"pers_no":"21526651","name":"STEFAN MILKOV","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_750":24.31,"proj_santander":111.69,"atype_120":16.0},"2026-02":{"atype_750":25.74,"proj_santander":118.26,"atype_120":16.0},"2026-03":{"atype_750":31.46,"proj_santander":144.54},"2026-04":{"atype_110":16.0,"atype_750":28.6,"proj_santander":131.4}},"wbs_codes":["ES1-7ST81.01.01"]},"11792261":{"pers_no":"11792261","name":"TOMAS ROMERO","manager":"Stefan Milkov","months":{"2026-01":{"atype_760":2.0,"atype_720":5.0,"atype_110":16.0,"proj_santander":110.0,"atype_700":3.0,"atype_123":40.0},"2026-02":{"atype_120":16.0,"atype_700":2.0,"proj_santander":139.0,"atype_720":3.0},"2026-03":{"atype_123":16.0,"atype_700":2.0,"proj_santander":139.0,"atype_720":3.0,"atype_120":16.0},"2026-04":{"atype_120":8.0,"atype_705":2.85,"proj_santander":149.15,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11724198":{"pers_no":"11724198","name":"UNAI ALDAYTURRIAGA","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"proj_santander":48.0,"atype_730":112.0},"2026-02":{"proj_santander":160.0},"2026-03":{"proj_santander":64.0}},"wbs_codes":["ES1-7ST58.01.04","ES1-8GC53.01.01"]},"60069369":{"pers_no":"60069369","name":"VICTOR PRIETO AYUSO","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_750":24.31,"proj_santander":111.69,"atype_110":16.0,"atype_123":24.0},"2026-02":{"atype_750":25.74,"proj_santander":118.26,"atype_123":8.0,"atype_795":8.0},"2026-03":{"atype_750":27.17,"proj_santander":148.83},"2026-04":{"atype_750":28.6,"proj_santander":131.4,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04","ES1-7ST81.01.01"]},"80044616":{"pers_no":"80044616","name":"VIRGINIA LORDEN","manager":"Silvia Tortosa Mendez","months":{"2026-01":{"atype_123":16.0,"atype_110":16.0,"atype_777":10.8,"proj_santander":133.2},"2026-02":{"atype_777":12.0,"proj_santander":148.0},"2026-03":{"atype_777":13.2,"proj_santander":162.8},"2026-04":{"atype_777":12.0,"proj_santander":148.0,"atype_110":16.0}},"wbs_codes":["ES1-SECR4.01.01","ES1-7ST81.03.01","ES1-7NE01.01.01","ES1-7EH02.10.04","ES1-7NE05.01.03"]},"11787723":{"pers_no":"11787723","name":"YESLAM LIMAM","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"proj_santander":86.95,"atype_730":32.0,"atype_775":32.0,"atype_705":1.05,"atype_123":8.0},"2026-02":{"atype_705":3.0,"proj_santander":157.0},"2026-03":{"atype_705":3.3,"proj_santander":172.7},"2026-04":{"atype_705":2.85,"proj_santander":149.15,"atype_110":16.0,"atype_123":8.0}},"wbs_codes":["ES1-7ST79.02.01"]},"11792268":{"pers_no":"11792268","name":"ZOILO GARCIA","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"proj_santander":125.75,"atype_705":2.25,"atype_123":32.0},"2026-02":{"atype_705":3.0,"proj_santander":153.0,"atype_760":4.0},"2026-03":{"atype_705":3.0,"proj_santander":152.0,"atype_760":5.0,"atype_123":16.0},"2026-04":{"atype_705":3.0,"proj_santander":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]}}};
+const SEED={"employees":{"11792128":{"pers_no":"11792128","name":"ABEL BORDON","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_123":40.0,"atype_110":16.0,"atype_705":2.25,"atype_st_446":117.75},"2026-02":{"atype_705":3.0,"atype_st_446":157.0},"2026-03":{"atype_705":3.3,"atype_st_446":172.7},"2026-04":{"atype_705":3.0,"atype_st_446":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.03"]},"11793815":{"pers_no":"11793815","name":"ABEL QUESADA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_705":2.55,"atype_st_400":133.45,"atype_123":16.0,"atype_760":8.0},"2026-02":{"atype_705":2.85,"atype_st_400":149.15,"atype_760":8.0},"2026-03":{"atype_705":0.15,"atype_st_400":7.85,"atype_760":8.0,"atype_120":24.0,"atype_121":120.0,"proj_santander":16.0},"2026-04":{"atype_121":160.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11588811":{"pers_no":"11588811","name":"ADRIAN YUSTE","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_st_401":151.0,"atype_705":1.0,"atype_121":8.0},"2026-02":{"atype_705":1.0,"atype_st_400":159.0},"2026-03":{"atype_st_400":173.7,"atype_705":2.3},"2026-04":{"atype_110":16.0,"atype_st_400":150.95,"atype_705":1.05,"atype_121":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11790733":{"pers_no":"11790733","name":"AGUSTIN TAMAMES","manager":"Jesús González Herrera","months":{"2026-01":{"atype_110":16.0,"atype_123":16.0,"atype_775":112.0,"atype_st_461":32.0},"2026-02":{"atype_400":144.0,"atype_123":16.0},"2026-03":{"atype_720":2.0,"atype_400":174.0},"2026-04":{"atype_720":2.5,"atype_400":149.5,"atype_110":16.0,"atype_120":8.0}},"wbs_codes":["ES1-7ST81.01.01","ES1-7SG11.01.01"]},"11787152":{"pers_no":"11787152","name":"ALEJANDRO ABEAL","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_705":2.85,"atype_st_400":149.15},"2026-02":{"atype_705":2.7,"atype_st_400":141.3,"atype_120":8.0,"atype_110":8.0},"2026-03":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":8.0,"atype_120":16.0},"2026-04":{"atype_120":8.0,"atype_110":16.0,"atype_705":2.85,"atype_st_400":149.15}},"wbs_codes":["ES1-7ST79.02.01"]},"11792138":{"pers_no":"11792138","name":"ALEJANDRO BRAVO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":3.0,"atype_st_462":157.0},"2026-02":{"atype_705":3.0,"atype_st_462":157.0},"2026-03":{"atype_705":3.3,"atype_st_462":172.7},"2026-04":{"atype_705":3.0,"atype_st_462":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"21526567":{"pers_no":"21526567","name":"ALEJANDRO GUERRERO","manager":"Agustin Rabano Trancon","months":{"2026-01":{"atype_400":35.0,"atype_st_400":38.0,"atype_750":55.0,"atype_110":16.0,"atype_123":32.0},"2026-02":{"atype_400":54.0,"atype_st_400":44.0,"atype_750":62.0},"2026-03":{"atype_400":60.5,"atype_st_400":44.0,"atype_750":69.5,"atype_401":2.0},"2026-04":{"atype_400":96.5,"atype_750":63.5,"atype_110":16.0}},"wbs_codes":["ES1-1AC10.01.01","ES1-7SG10.01.01","ES1-7ST81.01.01","ES1-7CEL7.01.06","ES1-7EH02.10.07","ES1-7CA36.25.02"]},"11794169":{"pers_no":"11794169","name":"ALVARO CASTRO","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_120":8.0,"atype_st_400":149.15,"atype_705":2.85},"2026-02":{"atype_123":8.0,"proj_santander":16.0,"atype_705":2.55,"atype_st_400":133.45},"2026-03":{"atype_705":3.3,"atype_st_400":167.7,"atype_750":5.0},"2026-04":{"atype_120":32.0,"atype_705":2.4,"atype_st_400":125.6,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11744238":{"pers_no":"11744238","name":"ANDRES OLIVERI","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_st_400":141.3,"atype_705":2.7,"atype_120":8.0,"atype_110":16.0,"atype_123":8.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11786917":{"pers_no":"11786917","name":"ANTON LOKHVITSKIY","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":2.4,"atype_st_400":125.6,"atype_123":32.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":2.85,"atype_st_400":149.15,"atype_120":24.0},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST79.02.01"]},"11792208":{"pers_no":"11792208","name":"ANTONIO JESUS ORTEGA","manager":"Stefan Milkov","months":{"2026-01":{"atype_st_400":153.9,"atype_110":16.0,"atype_705":2.1,"atype_760":4.0},"2026-02":{"atype_705":2.25,"atype_st_400":153.75,"atype_760":4.0},"2026-03":{"atype_123":16.0,"atype_705":3.0,"atype_st_400":153.0,"atype_760":4.0},"2026-04":{"atype_110":16.0,"atype_705":3.0,"atype_st_400":157.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11711366":{"pers_no":"11711366","name":"ANTONIO MAESTRO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_st_400":125.7,"atype_123":32.0,"atype_110":16.0,"atype_705":0.3,"atype_730":2.0},"2026-02":{"atype_705":5.7,"atype_st_400":154.3},"2026-03":{"atype_705":2.25,"atype_st_400":133.45,"atype_st_405":0.3,"proj_santander":40.0},"2026-04":{"atype_st_405":0.15,"atype_705":2.55,"atype_st_400":141.3,"atype_110":16.0,"atype_123":16.0}},"wbs_codes":["ES1-7ST58.01.12"]},"20144164":{"pers_no":"20144164","name":"ANTONIO ROMERO","manager":"Alicia Ojeda Dissez","months":{"2026-01":{"atype_110":16.0,"atype_120":8.0,"atype_st_400":120.0,"atype_400":32.0},"2026-02":{"atype_st_400":128.0,"atype_400":32.0},"2026-03":{"atype_st_400":136.0,"atype_400":32.0,"atype_700":8.0},"2026-04":{"atype_st_400":120.0,"atype_110":16.0,"atype_400":32.0,"atype_750":8.0}},"wbs_codes":["ES1-7ST75.01.02","ES1-7ST58.01.04","ES1-7ST76.01.01","ES1-7ST58.01.09","ES1-7ST75.01.01","ES1-7ST81.01.01","ES1-1ST74.01.11","ES1-7ST79.02.01"]},"11794513":{"pers_no":"11794513","name":"AROA CORTIJO","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_730":24.0,"atype_400":96.0,"atype_110":16.0,"atype_123":24.0,"atype_st_400":16.0},"2026-02":{"atype_400":160.0},"2026-03":{"atype_400":176.0},"2026-04":{"atype_400":152.0,"atype_110":16.0,"atype_123":8.0}},"wbs_codes":["ES1-7MAP6.01.01","ES1-7ST81.01.01"]},"11792135":{"pers_no":"11792135","name":"BORJA CRISTOBAL","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_123":16.0,"atype_705":2.7,"atype_st_462":141.3},"2026-02":{"atype_st_462":102.05,"atype_123":16.0,"proj_santander":40.0,"atype_705":1.95},"2026-03":{"atype_705":2.25,"atype_st_462":117.75,"atype_123":40.0,"atype_120":16.0},"2026-04":{"atype_120":40.0,"atype_110":16.0,"atype_705":2.25,"atype_st_462":117.75}},"wbs_codes":["ES1-7ST81.01.01"]},"11792216":{"pers_no":"11792216","name":"BYRON SUASTEGUI","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_st_400":64.0,"atype_110":16.0,"atype_123":88.0,"atype_705":2.0,"atype_760":6.0},"2026-02":{"atype_705":2.0,"atype_760":6.0,"atype_st_400":152.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11727851":{"pers_no":"11727851","name":"CARLOS COCO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_705":2.25,"atype_st_400":117.75},"2026-02":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":8.0},"2026-03":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":8.0,"atype_120":16.0},"2026-04":{"atype_705":2.7,"atype_st_400":138.8,"atype_123":10.5,"atype_120":8.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.09"]},"11724350":{"pers_no":"11724350","name":"CARLOS DE LA FUENTE","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_705":2.7,"atype_st_400":141.3,"atype_123":16.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.15,"atype_st_400":164.85,"atype_123":8.0},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST75.01.01"]},"21526463":{"pers_no":"21526463","name":"CARMEN CUENCA","manager":"Mar Garcia Gracia","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_400":75.0,"atype_st_400":45.0},"2026-02":{"atype_400":136.0,"atype_st_400":24.0},"2026-03":{"atype_400":144.0,"atype_st_400":32.0},"2026-04":{"atype_400":137.46,"atype_110":16.0,"atype_st_400":22.54}},"wbs_codes":["ES1-7AC10.01.01.01","ES1-7NX18.01.01.02","ES1-7ST81.01.01","BE1-ITOI1.01.80","ES1-7CM34.01.01","ES1-7SE38.01.01.01","ES1-7FE28.01.02","ES1-7NE05.01.01","ES1-7LO93.10.01","ES1-7CA36.24.02"]},"11748387":{"pers_no":"11748387","name":"CRISTIAN DIEGUEZ","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":1.95,"atype_st_400":102.05,"atype_123":56.0},"2026-02":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":8.0},"2026-03":{"atype_705":3.15,"atype_st_400":164.85,"atype_110":8.0},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.09"]},"11787601":{"pers_no":"11787601","name":"CRISTIAN FUENTES","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_705":0.75,"atype_st_400":39.25,"atype_110":16.0,"atype_400":120.0},"2026-02":{"atype_400":160.0},"2026-03":{"atype_705":3.3,"atype_400":172.7},"2026-04":{"atype_705":2.85,"atype_400":149.15,"atype_110":24.0}},"wbs_codes":["ES1-7ST79.02.01","ES1-8VX13.20.03"]},"11792219":{"pers_no":"11792219","name":"CRISTIAN GARCIA","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_705":2.55,"atype_st_462":133.45,"atype_110":16.0,"atype_123":24.0},"2026-02":{"atype_st_462":157.0,"atype_705":3.0},"2026-03":{"atype_120":104.0,"atype_705":1.35,"atype_st_462":70.65},"2026-04":{"atype_705":3.0,"atype_st_462":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792204":{"pers_no":"11792204","name":"CRISTIAN MORENO","manager":"Stefan Milkov","months":{"2026-01":{"atype_st_400":106.05,"atype_110":16.0,"atype_705":1.95,"atype_123":40.0,"atype_120":8.0,"atype_760":4.0},"2026-02":{"atype_705":2.85,"atype_st_400":145.15,"atype_120":8.0,"atype_760":4.0},"2026-03":{"atype_st_400":167.7,"atype_760":5.0,"atype_705":3.3},"2026-04":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":16.0,"atype_120":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11787290":{"pers_no":"11787290","name":"CRISTINA GUTIERREZ","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_110":16.0,"atype_400":78.3,"atype_st_400":78.6,"atype_705":3.1},"2026-02":{"atype_705":2.25,"atype_400":58.8,"atype_st_400":58.95,"atype_123":40.0},"2026-03":{"atype_400":78.0,"atype_st_400":78.0,"atype_123":16.0,"atype_705":4.0},"2026-04":{"atype_st_400":76.0,"atype_705":6.0,"atype_400":78.0,"atype_110":16.0}},"wbs_codes":["ES1-7CM34.01.01","ES1-7ST72.02.01"]},"11792267":{"pers_no":"11792267","name":"DANIEL MARTINEZ","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_st_400":116.0,"atype_760":4.0},"2026-02":{"atype_st_400":156.0,"atype_760":4.0},"2026-03":{"atype_st_400":140.0,"atype_760":4.0,"atype_123":32.0},"2026-04":{"atype_705":2.85,"atype_st_400":157.15,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11769695":{"pers_no":"11769695","name":"DANIEL RINCON","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_705":2.85,"atype_st_400":149.15},"2026-02":{"atype_st_400":157.0,"atype_705":3.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_110":16.0,"atype_705":3.0,"atype_st_400":157.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11799373":{"pers_no":"11799373","name":"DAVID FERNANDEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":64.0,"atype_705":1.8,"atype_st_400":94.2},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST76.01.01"]},"11792134":{"pers_no":"11792134","name":"DAVID VAZQUEZ","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_705":2.7,"atype_st_462":141.3,"atype_110":16.0,"atype_123":16.0},"2026-02":{"atype_705":3.0,"atype_st_462":157.0},"2026-03":{"atype_705":2.55,"atype_st_462":133.45,"atype_123":40.0},"2026-04":{"atype_705":3.0,"atype_st_462":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11788891":{"pers_no":"11788891","name":"FACUNDO HERNAN FAVALORO","manager":"Alejandro Guerrero Mendoza","months":{"2026-01":{"atype_110":16.0,"atype_st_400":56.0,"atype_123":104.0},"2026-02":{"atype_720":1.0,"atype_st_400":159.0},"2026-03":{"atype_720":5.0,"atype_st_400":171.0},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11788783":{"pers_no":"11788783","name":"FELIX RUIZ DEL MORAL","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_st_400":143.1,"atype_705":0.9,"atype_123":16.0},"2026-02":{"atype_705":1.2,"atype_st_400":158.8},"2026-03":{"atype_705":1.2,"atype_st_400":150.8,"atype_123":24.0},"2026-04":{"atype_705":4.35,"atype_st_400":123.65,"atype_110":16.0,"atype_123":32.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11778958":{"pers_no":"11778958","name":"FERNANDO ENMANUEL DE ESTEVES","manager":"Silvia Tortosa Mendez","months":{"2026-01":{"atype_441":47.0,"atype_st_441":11.0,"atype_110":16.0,"atype_735":30.0,"atype_123":8.0,"proj_santander":24.0}},"wbs_codes":["ES1-7AF01.01.02","ES1-7SE30.07.10","ES1-7ST81.03.01","ES1-7THL1.01.01","ES1-7TEK1.01.01"]},"11742438":{"pers_no":"11742438","name":"FERNANDO FERNANDEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_705":3.0,"atype_st_400":157.0},"2026-02":{"atype_705":2.7,"atype_st_400":141.3,"atype_123":16.0},"2026-03":{"atype_705":2.85,"atype_st_400":149.15,"atype_123":24.0},"2026-04":{"atype_120":16.0,"atype_110":16.0,"atype_705":2.7,"atype_st_400":141.3}},"wbs_codes":["ES1-7ST58.01.04"]},"11794112":{"pers_no":"11794112","name":"FERNANDO JARAUTA","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":24.0,"atype_123":16.0,"atype_705":2.4,"atype_st_400":129.6,"atype_760":4.0},"2026-02":{"atype_705":2.85,"atype_st_400":153.15,"atype_760":4.0},"2026-03":{"atype_705":3.0,"atype_st_400":152.0,"atype_110":8.0,"atype_123":8.0,"atype_760":5.0},"2026-04":{"atype_123":8.0,"atype_110":24.0,"atype_705":2.55,"atype_760":1.0,"atype_st_400":140.45}},"wbs_codes":["ES1-7ST81.01.01"]},"11788575":{"pers_no":"11788575","name":"FRANCISCO JAVIER SALAFRANCA","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_st_400":159.55,"atype_705":0.45},"2026-02":{"atype_705":6.4,"atype_st_400":153.6},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":2.7,"atype_st_400":141.3,"atype_120":16.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11788766":{"pers_no":"11788766","name":"FRANCISCO PEREZ","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_120":40.0,"atype_st_400":112.0},"2026-02":{"atype_705":0.6,"atype_st_400":159.4},"2026-03":{"atype_705":3.15,"atype_st_400":156.85,"atype_120":16.0},"2026-04":{"atype_120":8.0,"atype_110":16.0,"atype_705":2.7,"atype_st_400":141.3,"atype_123":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11796510":{"pers_no":"11796510","name":"GABRIEL MARCHANTE","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_120":16.0,"atype_705":2.7,"atype_st_446":141.3},"2026-02":{"atype_705":3.0,"atype_st_446":157.0},"2026-03":{"atype_705":2.55,"atype_st_446":133.45,"atype_121":40.0},"2026-04":{"atype_110":16.0,"atype_705":3.0,"atype_st_446":157.0}},"wbs_codes":["ES1-7ST81.01.03"]},"80075373":{"pers_no":"80075373","name":"GARRY ALOIS LOUIS ROBBRECHT","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_123":8.0,"atype_110":16.0,"atype_705":2.85,"atype_st_400":149.15},"2026-02":{"atype_705":2.7,"atype_st_400":141.3,"atype_123":16.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.12"]},"11800384":{"pers_no":"11800384","name":"GONZALO MARTI","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_st_400":159.0,"atype_705":1.0},"2026-02":{"atype_705":1.0,"atype_st_400":159.0},"2026-03":{"atype_705":3.45,"atype_st_400":172.55},"2026-04":{"atype_st_400":157.15,"atype_110":16.0,"atype_705":2.85}},"wbs_codes":["ES1-7ST81.01.01"]},"11792126":{"pers_no":"11792126","name":"GUILLERMO COLLADO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_705":2.25,"atype_st_462":117.75,"atype_110":16.0,"atype_123":40.0},"2026-02":{"atype_705":2.7,"atype_st_462":141.3,"atype_123":16.0},"2026-03":{"atype_705":3.3,"atype_st_462":172.7},"2026-04":{"atype_705":1.95,"atype_st_462":102.05,"atype_110":16.0,"atype_120":56.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11794499":{"pers_no":"11794499","name":"GUSTAVO RAMOS","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_st_461":153.3,"atype_705":2.7,"atype_760":4.0},"2026-02":{"atype_st_461":153.15,"atype_760":4.0,"atype_705":2.85},"2026-03":{"atype_705":2.7,"atype_st_461":136.3,"atype_760":5.0,"atype_123":32.0},"2026-04":{"atype_123":56.0,"atype_110":24.0,"atype_705":1.8,"atype_st_400":94.2}},"wbs_codes":["ES1-7ST81.01.01"]},"11793365":{"pers_no":"11793365","name":"HECTOR GOMEZ","manager":"Stefan Milkov","months":{"2026-01":{"atype_st_400":153.3,"atype_110":16.0,"atype_705":2.7,"atype_760":4.0},"2026-02":{"atype_705":2.85,"atype_st_400":153.15,"atype_760":4.0},"2026-03":{"atype_705":3.3,"atype_st_400":167.7,"atype_760":5.0},"2026-04":{"atype_110":24.0,"atype_st_400":133.45,"atype_760":8.0,"atype_123":8.0,"atype_705":2.55}},"wbs_codes":["ES1-7ST81.01.01"]},"11792221":{"pers_no":"11792221","name":"HEINRICH ALESSANDRO MEDINA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_730":128.0,"atype_123":24.0,"atype_760":8.0},"2026-02":{"atype_730":32.0,"atype_760":8.0,"atype_123":56.0,"proj_santander":24.0,"atype_120":40.0},"2026-03":{"atype_730":176.0},"2026-04":{"atype_110":16.0,"atype_st_400":128.0,"atype_730":32.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11740497":{"pers_no":"11740497","name":"INAKI SANTAMARIA","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_120":40.0,"atype_st_400":120.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_110":16.0,"atype_705":3.0,"atype_st_400":157.0}},"wbs_codes":["ES1-7ST58.01.12"]},"80116570":{"pers_no":"80116570","name":"ISABEL ZANUY","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_110":24.0,"atype_750":24.31,"atype_st_462":111.69,"atype_123":16.0},"2026-02":{"atype_750":28.6,"atype_st_462":131.4},"2026-03":{"atype_110":8.0,"atype_123":16.0,"atype_750":27.17,"atype_st_462":124.83},"2026-04":{"atype_110":24.0,"atype_750":24.31,"atype_st_462":111.69,"atype_123":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792265":{"pers_no":"11792265","name":"JAVI GONZALEZ","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_st_462":117.9,"atype_123":40.0,"atype_705":2.1},"2026-02":{"atype_705":3.0,"atype_st_462":157.0},"2026-03":{"atype_705":3.0,"atype_st_462":157.0,"atype_123":16.0},"2026-04":{"atype_123":8.0,"atype_120":8.0,"atype_705":2.7,"atype_st_462":141.3,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"75010506":{"pers_no":"75010506","name":"JAVIER CIVERA","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_110":16.0,"atype_123":24.0,"atype_750":24.31,"atype_st_462":111.69},"2026-02":{"atype_750":28.6,"atype_st_462":131.4},"2026-03":{"atype_st_462":118.83,"atype_750":27.17,"atype_123":24.0,"atype_121":6.0},"2026-04":{"atype_120":16.0,"atype_110":16.0,"atype_750":25.74,"atype_st_462":118.26}},"wbs_codes":["ES1-7ST58.01.04","ES1-7ST79.02.01","ES1-7ST81.01.01"]},"80116549":{"pers_no":"80116549","name":"JAVIER DE MIGUEL","manager":"Agustin Rabano Trancon","months":{"2026-01":{"atype_110":24.0,"atype_120":16.0,"atype_461":72.0,"atype_750":64.0},"2026-02":{"atype_461":68.0,"atype_750":76.0,"atype_st_461":16.0},"2026-03":{"atype_461":84.0,"atype_110":8.0,"atype_120":32.0,"atype_750":52.0},"2026-04":{"atype_120":16.0,"atype_110":24.0,"atype_461":88.0,"atype_750":48.0}},"wbs_codes":["ES1-1CDR2.01.01","ES1-7AC10.01.01.08","ES1-7SG10.01.01","ES1-7CM34.01.01","ES1-7ST81.01.01","ES1-7CDR3.01.01","ES1-7CA36.15.02","ES1-7SE38.01.01.01"]},"11744452":{"pers_no":"11744452","name":"JAVIER DIAZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":2.25,"atype_st_400":117.75,"atype_110":16.0,"atype_123":16.0,"atype_120":24.0}},"wbs_codes":["ES1-7ST58.01.11"]},"11792217":{"pers_no":"11792217","name":"JAVIER ESCRIBANO","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":16.0,"atype_760":6.0,"atype_705":3.0,"atype_st_400":135.0},"2026-02":{"atype_760":6.0,"atype_705":3.0,"atype_st_400":151.0},"2026-03":{"atype_760":8.0,"atype_705":4.0,"atype_st_400":164.0},"2026-04":{"atype_110":16.0,"atype_st_400":151.0,"atype_760":6.0,"atype_705":3.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11724497":{"pers_no":"11724497","name":"JAVIER LAIN","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":32.0,"atype_705":2.4,"atype_st_400":125.6},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":2.85,"atype_st_400":149.15,"atype_123":8.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11794168":{"pers_no":"11794168","name":"JESUS COBOS","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_705":2.85,"atype_st_446":39.4,"atype_st_400":117.75},"2026-02":{"atype_123":40.0,"atype_705":2.25,"atype_st_446":117.75},"2026-03":{"atype_705":3.15,"atype_st_446":164.85,"proj_santander":8.0},"2026-04":{"atype_705":1.5,"atype_st_446":62.8,"atype_110":24.0,"atype_st_443":15.7,"atype_120":16.0}},"wbs_codes":["ES1-7ST81.01.03"]},"11740463":{"pers_no":"11740463","name":"JESUS HERNANDEZ","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_705":2.85,"atype_st_412":122.15,"atype_st_414":35.0},"2026-02":{"atype_705":3.0,"atype_st_412":157.0},"2026-03":{"atype_705":3.3,"atype_st_412":172.7},"2026-04":{"atype_705":3.0,"atype_st_412":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792207":{"pers_no":"11792207","name":"JESUS VENTEO","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_120":8.0,"atype_705":2.7,"atype_st_400":145.3,"atype_760":4.0},"2026-02":{"atype_st_400":145.3,"atype_760":4.0,"atype_705":2.7,"atype_120":8.0},"2026-03":{"atype_705":3.15,"atype_st_400":167.85,"atype_760":5.0},"2026-04":{"atype_120":8.0,"atype_705":2.85,"atype_st_400":149.15,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792145":{"pers_no":"11792145","name":"JORDI ALEMANY","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_123":32.0,"atype_120":8.0,"atype_st_400":113.9,"atype_705":2.1,"atype_760":4.0},"2026-02":{"atype_705":2.85,"atype_st_400":145.15,"atype_120":8.0,"atype_760":4.0},"2026-03":{"atype_705":3.0,"atype_st_400":152.0,"atype_760":5.0,"atype_700":16.0},"2026-04":{"atype_110":16.0,"atype_705":3.0,"atype_700":15.7,"atype_st_400":141.3}},"wbs_codes":["ES1-7ST81.01.01"]},"11806309":{"pers_no":"11806309","name":"JORGE AREVALILLO","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":2.1,"atype_st_462":109.9,"atype_123":48.0},"2026-02":{"atype_123":24.0,"atype_705":2.55,"atype_st_462":133.45},"2026-03":{"atype_705":3.3,"atype_st_462":172.7},"2026-04":{"atype_705":1.95,"atype_st_462":102.05,"atype_120":56.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11768856":{"pers_no":"11768856","name":"JORGE GARCIA","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_705":2.1,"atype_st_400":113.9,"atype_760":4.0},"2026-02":{"atype_st_400":145.3,"atype_760":4.0,"atype_123":8.0,"atype_705":2.7},"2026-03":{"atype_705":3.15,"atype_st_400":167.85,"atype_760":5.0},"2026-04":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":16.0,"atype_760":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11790744":{"pers_no":"11790744","name":"JORGE REMESEIRO","manager":"Stefan Milkov","months":{"2026-01":{"atype_st_461":8.0,"atype_st_400":142.35,"atype_705":1.65,"atype_720":4.0,"atype_760":4.0,"atype_110":16.0},"2026-02":{"atype_st_400":156.0,"atype_760":4.0},"2026-03":{"atype_st_400":171.0,"atype_760":5.0},"2026-04":{"atype_705":0.15,"atype_st_400":130.85,"atype_760":5.0,"atype_120":16.0,"atype_110":24.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792266":{"pers_no":"11792266","name":"JOSE LUIS ALVAREZ-OSSORIO","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":56.0,"atype_705":3.0,"atype_st_400":101.0},"2026-02":{"atype_705":4.0,"atype_st_400":132.0,"atype_123":24.0},"2026-03":{"atype_705":4.0,"atype_st_400":172.0},"2026-04":{"atype_705":5.0,"atype_st_400":139.0,"atype_110":16.0,"atype_120":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11724511":{"pers_no":"11724511","name":"JOSE MARIA AMBITE","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_st_400":40.0,"atype_730":120.0},"2026-02":{"atype_730":160.0},"2026-03":{"atype_st_400":128.0,"atype_730":48.0},"2026-04":{"atype_400":160.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04","ES1-7EH02.10.03","ES1-7FE28.01.06","ES1-7CM34.01.01"]},"11794373":{"pers_no":"11794373","name":"JUAN JOSE AVECILLA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_705":2.25,"atype_st_400":117.75},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.0,"atype_st_400":157.0,"atype_123":16.0},"2026-04":{"atype_120":8.0,"atype_110":24.0,"atype_705":2.55,"atype_st_400":133.45,"atype_123":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"21526650":{"pers_no":"21526650","name":"JUAN MILICUA","manager":"Alejandro Guerrero Mendoza","months":{"2026-01":{"atype_110":16.0,"atype_720":2.0,"atype_461":108.0,"atype_st_461":50.0},"2026-02":{"atype_720":2.0,"atype_461":158.0},"2026-03":{"atype_720":2.0,"atype_461":150.0,"atype_120":8.0,"atype_123":16.0},"2026-04":{"atype_123":8.0,"atype_110":16.0,"atype_461":144.0,"atype_720":2.0,"atype_760":6.0}},"wbs_codes":["ES1-7CA36.25.02","ES1-1NX10.01.01","ES1-7ST58.01.04","ES1-7SL13.01.01","ES1-7NX16.01.01","ES1-7SL13.03.01"]},"11788190":{"pers_no":"11788190","name":"LORENZO SERRANO","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_st_400":158.5,"atype_705":1.5},"2026-02":{"atype_705":4.7,"atype_st_400":147.3,"atype_120":8.0},"2026-03":{"atype_705":2.85,"atype_st_400":149.15,"atype_120":24.0},"2026-04":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":16.0,"atype_120":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11796511":{"pers_no":"11796511","name":"LUIS GARCIA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":72.0,"atype_705":1.35,"atype_st_400":70.65,"atype_120":16.0}},"wbs_codes":["ES1-7ST79.02.01"]},"11792162":{"pers_no":"11792162","name":"MANUEL LOPEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_123":8.0,"atype_110":16.0,"atype_705":2.55,"atype_st_400":133.45,"atype_760":8.0,"atype_120":8.0},"2026-02":{"atype_705":2.55,"atype_st_400":133.45,"atype_123":8.0,"atype_120":8.0,"atype_760":8.0},"2026-03":{"atype_705":3.15,"atype_st_400":164.85,"atype_760":8.0},"2026-04":{"atype_110":16.0,"atype_705":2.85,"atype_st_400":149.15,"atype_760":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792262":{"pers_no":"11792262","name":"MANUEL MARTIN","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":3.0,"atype_st_462":157.0},"2026-02":{"proj_santander":80.0,"atype_123":40.0,"atype_705":0.75,"atype_st_462":39.25},"2026-03":{"atype_705":3.3,"atype_st_462":172.7},"2026-04":{"atype_705":3.0,"atype_st_462":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11796407":{"pers_no":"11796407","name":"MARCO BARRIOS","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_123":16.0,"atype_110":16.0,"atype_705":2.7,"atype_st_446":141.3},"2026-02":{"atype_705":1.8,"atype_st_446":94.2,"atype_120":24.0,"atype_121":40.0},"2026-03":{"atype_705":3.0,"atype_st_446":157.0,"atype_120":16.0},"2026-04":{"atype_705":2.4,"atype_st_446":125.6,"atype_120":32.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.03"]},"11799200":{"pers_no":"11799200","name":"MARIA ALBA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_123":8.0,"atype_110":16.0,"atype_121":152.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_110":24.0,"atype_705":2.85,"atype_st_400":149.15}},"wbs_codes":["ES1-7ST76.01.01"]},"11792377":{"pers_no":"11792377","name":"MAURICIO ALTAMURA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_705":1.35,"atype_st_400":70.65,"atype_760":8.0,"atype_123":80.0},"2026-02":{"atype_705":0.6,"atype_st_400":151.4,"atype_760":8.0},"2026-03":{"atype_st_400":164.85,"atype_705":3.15,"atype_760":8.0},"2026-04":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":16.0,"atype_760":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11575980":{"pers_no":"11575980","name":"MAYTE NAVARRO","manager":"Fcojavier Zamorano Sanchez","months":{"2026-01":{"atype_123":40.0,"atype_110":16.0,"atype_st_432":40.0,"atype_432":75.0,"atype_760":5.0},"2026-02":{"atype_432":96.0,"atype_st_432":60.0,"atype_760":4.0},"2026-03":{"atype_760":5.0,"atype_432":99.0,"atype_st_432":56.0,"atype_123":16.0},"2026-04":{"atype_760":3.0,"atype_432":109.0,"atype_110":16.0,"atype_123":8.0,"atype_st_432":40.0}},"wbs_codes":["ES1-7ST81.01.01","ES1-1AC10.98.02","ES1-7CM34.01.01"]},"11724380":{"pers_no":"11724380","name":"MIGUEL ANGEL LOPEZ","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_120":8.0,"atype_705":2.85,"atype_st_400":149.15},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11792213":{"pers_no":"11792213","name":"MIGUEL ANGEL RINCON","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_120":40.0,"atype_110":16.0,"atype_st_400":40.0,"atype_775":80.0}},"wbs_codes":["ES1-7ST81.01.01"]},"80166642":{"pers_no":"80166642","name":"MIGUEL MONTORO","manager":"Montserrat Carrasco Bellmunt","months":{"2026-01":{"atype_110":16.0,"atype_441":66.0,"atype_411":2.0,"atype_st_441":68.0,"atype_123":24.0},"2026-02":{"atype_st_441":80.0,"atype_441":80.0},"2026-03":{"atype_441":110.0,"atype_120":16.0,"atype_760":10.0,"atype_st_441":40.0},"2026-04":{"atype_120":8.0,"atype_110":16.0,"atype_st_441":80.0,"atype_441":62.0,"atype_760":10.0}},"wbs_codes":["ES1-1RD10.99.02","ES1-7THL1.01.01","ES1-7PC08.01.02.02","ES1-7ST81.01.01","ES1-7AF01.01.04"]},"11618972":{"pers_no":"11618972","name":"NICOLAS GONZALEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_st_400":128.0,"atype_120":32.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":1.65,"atype_st_400":86.35,"atype_110":16.0,"atype_730":72.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11722940":{"pers_no":"11722940","name":"OSCAR TOJA","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.0,"atype_st_400":157.0,"atype_123":16.0},"2026-04":{"atype_110":16.0,"atype_705":3.0,"atype_st_400":157.0}},"wbs_codes":["ES1-7ST58.01.04"]},"21526801":{"pers_no":"21526801","name":"PILAR TARANCON","manager":"Mar Garcia Gracia","months":{"2026-01":{"atype_110":16.0,"atype_st_466":72.0,"atype_466":80.0,"atype_123":8.0},"2026-02":{"atype_466":80.0,"atype_st_466":80.0},"2026-03":{"atype_466":96.0,"atype_st_466":80.0},"2026-04":{"atype_466":80.0,"atype_110":16.0,"atype_st_466":80.0}},"wbs_codes":["ES1-7ST81.01.01","ES1-7EXP1.01.03"]},"11792131":{"pers_no":"11792131","name":"RANGEL YAHIR NARREA","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_705":2.1,"atype_st_462":109.9,"atype_123":48.0},"2026-02":{"atype_705":3.0,"atype_st_462":157.0},"2026-03":{"atype_705":3.15,"atype_st_462":164.85,"atype_123":8.0},"2026-04":{"atype_705":2.4,"atype_st_462":125.6,"atype_110":16.0,"atype_123":32.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11792163":{"pers_no":"11792163","name":"RUBEN FERNANDEZ","manager":"Javier Civera Hernández","months":{"2026-01":{"atype_110":16.0,"atype_123":40.0,"atype_st_446":117.75,"atype_705":2.25},"2026-02":{"atype_705":3.0,"atype_st_446":157.0},"2026-03":{"atype_705":1.95,"atype_st_446":102.05,"atype_121":40.0,"atype_123":32.0},"2026-04":{"atype_705":3.0,"atype_st_446":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.03"]},"11788743":{"pers_no":"11788743","name":"SAMUEL VAL","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_st_400":134.8,"atype_705":1.2,"atype_120":8.0,"atype_795":8.0},"2026-02":{"atype_st_400":158.8,"atype_705":1.2},"2026-03":{"atype_705":3.3,"atype_st_400":140.7,"atype_123":8.0,"atype_120":24.0},"2026-04":{"atype_705":2.85,"atype_110":16.0,"atype_st_400":149.15,"atype_120":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"11792148":{"pers_no":"11792148","name":"SANTIAGO RAMOS","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_705":3.0,"atype_st_400":157.0},"2026-02":{"atype_705":2.85,"atype_st_400":145.15,"atype_760":4.0,"atype_123":8.0},"2026-03":{"atype_705":3.3,"atype_st_400":168.7,"atype_760":4.0},"2026-04":{"atype_705":3.0,"atype_st_400":153.0,"atype_760":4.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11794038":{"pers_no":"11794038","name":"SANTIAGO ROLDAN","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_705":2.25,"atype_st_400":137.75,"atype_123":16.0,"atype_760":4.0},"2026-02":{"atype_705":2.85,"atype_st_400":145.15,"atype_760":4.0,"atype_120":8.0},"2026-03":{"atype_705":3.15,"atype_st_400":167.85,"atype_760":5.0},"2026-04":{"atype_705":2.7,"atype_st_400":141.3,"atype_110":16.0,"atype_123":8.0,"atype_120":8.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11788574":{"pers_no":"11788574","name":"SARA MAESO","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_705":5.0,"atype_st_400":117.8,"atype_730":29.2,"atype_110":16.0,"atype_123":8.0},"2026-02":{"atype_st_400":158.8,"atype_705":1.2},"2026-03":{"atype_123":18.0,"atype_st_400":154.7,"atype_705":3.3},"2026-04":{"atype_110":16.0,"atype_705":2.85,"atype_st_400":149.15,"atype_123":8.0}},"wbs_codes":["ES1-7ST58.01.04"]},"21526651":{"pers_no":"21526651","name":"STEFAN MILKOV","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_110":16.0,"atype_123":8.0,"atype_750":24.31,"atype_st_462":111.69,"atype_120":16.0},"2026-02":{"atype_750":25.74,"atype_st_462":118.26,"atype_120":16.0},"2026-03":{"atype_750":31.46,"atype_st_462":144.54},"2026-04":{"atype_110":16.0,"atype_750":28.6,"atype_st_462":131.4}},"wbs_codes":["ES1-7ST81.01.01"]},"11792261":{"pers_no":"11792261","name":"TOMAS ROMERO","manager":"Stefan Milkov","months":{"2026-01":{"atype_760":2.0,"atype_720":5.0,"atype_110":16.0,"atype_st_400":110.0,"atype_700":3.0,"atype_123":40.0},"2026-02":{"atype_120":16.0,"atype_700":2.0,"atype_st_400":139.0,"atype_720":3.0},"2026-03":{"atype_123":16.0,"atype_700":2.0,"atype_st_400":139.0,"atype_720":3.0,"atype_120":16.0},"2026-04":{"atype_120":8.0,"atype_705":2.85,"atype_st_400":149.15,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]},"11724198":{"pers_no":"11724198","name":"UNAI ALDAYTURRIAGA","manager":"Victor Prieto Ayuso","months":{"2026-01":{"atype_110":16.0,"atype_st_400":8.0,"atype_730":112.0,"atype_400":40.0},"2026-02":{"atype_400":160.0},"2026-03":{"atype_400":64.0}},"wbs_codes":["ES1-7ST58.01.04","ES1-8GC53.01.01"]},"60069369":{"pers_no":"60069369","name":"VICTOR PRIETO AYUSO","manager":"Antonio Romero Valverde","months":{"2026-01":{"atype_750":24.31,"atype_st_462":111.69,"atype_110":16.0,"atype_123":24.0},"2026-02":{"atype_750":25.74,"atype_st_462":118.26,"atype_123":8.0,"atype_795":8.0},"2026-03":{"atype_750":27.17,"atype_st_462":124.83,"proj_santander":24.0},"2026-04":{"atype_750":28.6,"atype_st_462":131.4,"atype_110":16.0}},"wbs_codes":["ES1-7ST58.01.04","ES1-7ST81.01.01"]},"80044616":{"pers_no":"80044616","name":"VIRGINIA LORDEN","manager":"Silvia Tortosa Mendez","months":{"2026-01":{"atype_123":16.0,"atype_110":16.0,"atype_777":10.8,"atype_400":123.2,"atype_st_400":10.0},"2026-02":{"atype_777":12.0,"atype_st_400":20.0,"atype_400":128.0},"2026-03":{"atype_777":13.2,"atype_st_400":22.0,"atype_400":140.8},"2026-04":{"atype_777":12.0,"atype_st_400":20.0,"atype_400":128.0,"atype_110":16.0}},"wbs_codes":["ES1-SECR4.01.01","ES1-7ST81.03.01","ES1-7NE01.01.01","ES1-7EH02.10.04","ES1-7NE05.01.03"]},"11787723":{"pers_no":"11787723","name":"YESLAM LIMAM","manager":"Isabel Zanuy Mazana","months":{"2026-01":{"atype_110":16.0,"atype_st_400":86.95,"atype_730":32.0,"atype_775":32.0,"atype_705":1.05,"atype_123":8.0},"2026-02":{"atype_705":3.0,"atype_st_400":157.0},"2026-03":{"atype_705":3.3,"atype_st_400":172.7},"2026-04":{"atype_705":2.85,"atype_st_400":149.15,"atype_110":16.0,"atype_123":8.0}},"wbs_codes":["ES1-7ST79.02.01"]},"11792268":{"pers_no":"11792268","name":"ZOILO GARCIA","manager":"Stefan Milkov","months":{"2026-01":{"atype_110":16.0,"atype_st_400":125.75,"atype_705":2.25,"atype_123":32.0},"2026-02":{"atype_705":3.0,"atype_st_400":153.0,"atype_760":4.0},"2026-03":{"atype_705":3.0,"atype_st_400":152.0,"atype_760":5.0,"atype_123":16.0},"2026-04":{"atype_705":3.0,"atype_st_400":157.0,"atype_110":16.0}},"wbs_codes":["ES1-7ST81.01.01"]}}};
 let DB={}, currentYear='2026', activePeriod=new Set();
 let filterMgr='all', filterEmp='', filterWbs='all';
 let ssMgr, ssEmp, ssWbs, ssYear;
+// ── SEED Control Labor 2026 (Col B=CATW, Col E=EID, Col H=horas) ──
+// Fuente: Control Labor 2026.xlsx · Suma de horas por EID y mes
+const ACTUAL_SEED={
+  file:'Control Labor 2026.xlsx',
+  months:['2026-01','2026-02','2026-03','2026-04'],
+  employees:{
+    '11792128':{months:{'2026-01':117.75,'2026-02':157.0,'2026-03':170.0,'2026-04':155.0}},
+    '11793815':{months:{'2026-01':133.45,'2026-02':149.15,'2026-03':6.0}},
+    '11588811':{months:{'2026-01':151.0,'2026-02':162.5,'2026-03':175.0,'2026-04':152.0}},
+    '11792138':{months:{'2026-01':157.0,'2026-02':160.0,'2026-03':172.7,'2026-04':160.0}},
+    '11711366':{months:{'2026-01':125.7,'2026-02':154.3,'2026-03':134.0,'2026-04':145.0}},
+    '11792219':{months:{'2026-01':133.45,'2026-02':157.0,'2026-03':72.0,'2026-04':160.0}},
+    '11769695':{months:{'2026-01':149.15,'2026-02':157.0,'2026-03':170.0,'2026-04':161.0}},
+    '75010506':{months:{'2026-01':111.69,'2026-02':131.4,'2026-03':118.83,'2026-04':120.0}},
+    '11618972':{months:{'2026-01':128.0,'2026-02':157.0,'2026-03':175.0,'2026-04':88.0}},
+    '11722940':{months:{'2026-01':157.0,'2026-02':157.0,'2026-03':157.0,'2026-04':159.0}},
+    '21526651':{months:{'2026-01':111.69,'2026-02':118.26,'2026-03':144.54,'2026-04':131.4}},
+    '60069369':{months:{'2026-01':111.69,'2026-02':118.26,'2026-03':124.83,'2026-04':131.4}},
+    '11792216':{months:{'2026-01':64.0,'2026-02':153.0,'2026-03':172.7,'2026-04':157.0}},
+    '99999001':{months:{'2026-01':80.0,'2026-02':95.0,'2026-03':100.0}},
+  }
+};
+let actualData=null;   // se rellena desde SEED o desde fichero cargado
+let folderHandle=null; // referencia a la carpeta OneDrive seleccionada
 
 // ── MICROSOFT GRAPH / SHAREPOINT (OAuth2 PKCE nativo — sin librerías) ──
 const CLIENT_ID='29b7b569-0a1b-47be-9f91-efc4922337ae';
@@ -456,9 +489,11 @@ function saveDB(){ try{localStorage.setItem(SK,JSON.stringify(DB));}catch(e){} }
 
 // ── FOLDER PICKER ────────────────────────────────────────
 async function selectFolder(){
+  document.getElementById('fs-bar').style.display='';
   if(!window.showDirectoryPicker){ showToast('Usa Chrome o Edge para esta función','err'); return; }
   try{
     const h = await window.showDirectoryPicker({mode:'read'});
+    folderHandle=h;
     log('📂 Carpeta seleccionada: '+h.name, true);
     const stats = {processed:0, errors:0, skipped:0, files:[]};
     showToast('Leyendo carpeta '+h.name+'...','info');
@@ -474,6 +509,8 @@ async function selectFolder(){
       setFolderOK(h.name); render(); updateTags();
     }
     else { log('⚠️ No se encontraron ficheros CADO_cierre_.xlsx en la carpeta o subcarpetas','');  }
+    // Auto-cargar Control Labor si existe en la carpeta
+    await autoLoadActual(h);
   }catch(e){ if(e.name!=='AbortError') showToast('Error: '+e.message,'err'); }
 }
 
@@ -499,6 +536,87 @@ async function scanFolder(handle, stats, depth){
       }catch(e){ stats.errors++; log('  ❌ Error en '+name+': '+e.message); }
     }
   }catch(e){ log('  ⚠️ No se pudo leer la carpeta: '+e.message); }
+}
+
+// Busca "Control Labor*.xlsx" en la carpeta y lo carga automáticamente
+async function autoLoadActual(dirHandle){
+  try{
+    for await(const [name, fh] of dirHandle.entries()){
+      if(fh.kind!=='file') continue;
+      if(!name.toLowerCase().includes('control labor')||!name.endsWith('.xlsx')) continue;
+      log('  📋 Control Labor detectado: '+name);
+      const file=await fh.getFile();
+      await parseActualFile(file);
+      return; // solo el primero que encuentre
+    }
+    // Buscar también en subcarpetas de primer nivel
+    for await(const [name, fh] of dirHandle.entries()){
+      if(fh.kind!=='directory') continue;
+      for await(const [n2, fh2] of fh.entries()){
+        if(fh2.kind!=='file') continue;
+        if(!n2.toLowerCase().includes('control labor')||!n2.endsWith('.xlsx')) continue;
+        log('  📋 Control Labor detectado en subcarpeta: '+n2);
+        const file=await fh2.getFile();
+        await parseActualFile(file);
+        return;
+      }
+    }
+  }catch(e){ log('  ⚠️ No se pudo buscar Control Labor: '+e.message); }
+}
+
+// Parsea un fichero Control Labor y rellena actualData
+async function parseActualFile(file){
+  return new Promise((resolve)=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        // Buscar la pestaña "labor raw data" (insensible a mayúsculas), si no, la primera
+        const sheetName=wb.SheetNames.find(n=>n.toLowerCase().includes('labor raw data'))||wb.SheetNames[0];
+        const ws=wb.Sheets[sheetName];
+        log('📋 Leyendo pestaña: '+sheetName);
+        const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        const emp={};const months=new Set();
+        rows.forEach((row,i)=>{
+          if(i===0)return; // saltar cabecera
+          const colB=String(row[1]||'');
+          if(!colB.toUpperCase().includes('CATW'))return;
+          const colA=row[0];
+          const colE=String(row[4]||'').trim();
+          const colF=String(row[5]||'').trim();   // nombre empleado
+          const colG=String(row[15]||'').trim();  // ciudad (col P)
+          const colQ=String(row[16]||'').trim();  // offering (col Q)
+          const colH=parseFloat(String(row[7]||'0').replace(',','.'))||0;
+          if(!colE||!colA||colH===0)return;
+          let mk='';
+          if(colA instanceof Date){
+            mk=`${colA.getFullYear()}-${String(colA.getMonth()+1).padStart(2,'0')}`;
+          }else{
+            const s=String(colA).trim();
+            const mFull=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+            const mMY=s.match(/^(\d{1,2})[\/\-](\d{4})$/);
+            const mYM=s.match(/^(\d{4})[\/\-](\d{1,2})$/);
+            if(mFull)mk=`${mFull[3]}-${mFull[2].padStart(2,'0')}`;
+            else if(mMY)mk=`${mMY[2]}-${mMY[1].padStart(2,'0')}`;
+            else if(mYM)mk=`${mYM[1]}-${mYM[2].padStart(2,'0')}`;
+            else{const d=new Date(s);if(!isNaN(d))mk=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;}
+          }
+          if(!mk)return;
+          months.add(mk);
+          if(!emp[colE])emp[colE]={eid:colE,name:colF,city:colG,offering:colQ,months:{}};
+          emp[colE].months[mk]=(emp[colE].months[mk]||0)+colH;
+        });
+        if(months.size){
+          actualData={employees:emp,months:[...months].sort(),file:file.name};
+          showToast(`📋 ${file.name} · pestaña "${sheetName}" · ${Object.keys(emp).length} emp · ${months.size} meses`,'ok');
+        }else{
+          showToast(`⚠️ No se encontraron datos CATW en la pestaña "${sheetName}"`, 'err');
+        }
+      }catch(e){ log('  ❌ Error parseando Control Labor: '+e.message); }
+      resolve();
+    };
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 function setFolderOK(name){
@@ -811,11 +929,15 @@ function render(){
 }
 function getPMo(){return yearMo(currentYear).filter(mk=>activePeriod.has(mk));}
 function renderSummary(emps){
-  const mo=getPMo();let tP=0,tV=0,tS=0,tL=0,tH=0,tF=0;
-  emps.forEach(([n,d])=>mo.forEach(mk=>{const c=(d.months||{})[mk]||{};tP+=c.proj_santander||0;tV+=c.atype_120||0;tS+=c.atype_121||0;tL+=c.atype_123||0;tH+=c.atype_110||0;tF+=c.atype_730||0;}));
+  const mo=getPMo();let t7st=0,tV=0,tS=0,tL=0,tH=0,tF=0;
+  emps.forEach(([n,d])=>mo.forEach(mk=>{
+    const c=(d.months||{})[mk]||{};
+    Object.keys(c).forEach(k=>{if(k.startsWith('atype_st_'))t7st+=c[k]||0;});
+    tV+=c.atype_120||0;tS+=c.atype_121||0;tL+=c.atype_123||0;tH+=c.atype_110||0;tF+=c.atype_730||0;
+  }));
   const sg=document.getElementById('sg');sg.innerHTML='';
-  [{l:'Empleados',v:emps.length,c:'#1c1c30',s:''},{l:'H. Santander',v:tP.toFixed(1),c:'#d35400',s:'h'},
-   {l:'Vacaciones',v:tV.toFixed(1),c:'#27ae60',s:'h'},{l:'Festivos',v:tH.toFixed(1),c:'#2980b9',s:'h'},
+  [{l:'Empleados',v:emps.length,c:'#1c1c30',s:''},{l:'H. 7ST',v:t7st.toFixed(0),c:'#27ae60',s:'h'},
+   {l:'Vacaciones',v:tV.toFixed(1),c:'#2980b9',s:'h'},{l:'Festivos',v:tH.toFixed(1),c:'#7f8c8d',s:'h'},
    {l:'Bajas',v:tS.toFixed(1),c:'#c0392b',s:'h'},{l:'Permisos',v:tL.toFixed(1),c:'#8e44ad',s:'h'},
    {l:'Formacion',v:tF.toFixed(1),c:'#16a085',s:'h'},
   ].forEach(x=>sg.innerHTML+=`<div class="sc"><div class="val" style="color:${x.c}">${x.v}${x.s}</div><div class="lbl">${x.l}</div></div>`);
@@ -968,8 +1090,638 @@ function buildTable(d){
 function updateTags(){ /* no-op: drag-drop zone removed */ }
 function expandAll(){document.querySelectorAll('.mgr-section').forEach(s=>s.classList.remove('collapsed'));}
 function collapseAll(){document.querySelectorAll('.mgr-section').forEach(s=>s.classList.add('collapsed'));}
-function clearData(){if(!confirm('¿Borrar todo?'))return;DB={'2026':JSON.parse(JSON.stringify(SEED))};saveDB();activePeriod=new Set();currentYear='2026';initSelects();initYearSel();buildPills();render();showToast('Datos reseteados','ok');document.getElementById('fs-bar').className='fs-bar';document.getElementById('fs-bar').innerHTML='<div class="fs-icon">📂</div><div class="fs-text"><strong>Carpeta no conectada</strong><span>Selecciona tu carpeta DXCTIME_MES</span></div><div class="fs-right"><button class="btn btn-p" onclick="selectFolder()">📁 Seleccionar</button></div>';}
+function clearData(){if(!confirm('¿Borrar todo?'))return;DB={'2026':JSON.parse(JSON.stringify(SEED))};saveDB();activePeriod=new Set();currentYear='2026';initSelects();initYearSel();buildPills();render();showToast('Datos reseteados','ok');const bar=document.getElementById('fs-bar');bar.className='fs-bar';bar.style.display='none';bar.innerHTML='<div class="fs-icon">📂</div><div class="fs-text"><strong>Carpeta no conectada</strong><span>Selecciona tu carpeta DXCTIME_MES</span></div><div class="fs-right"><button class="btn btn-p" onclick="selectFolder()">📁 Seleccionar</button></div>';}
 function showToast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',5000);}
+
+// ── PROYECCIÓN / RIESGO HORAS ────────────────────────────
+function showRiesgo(){
+  const BUDGET=1760;
+  const BASE_H=166;   // horas base fijas por mes para toda la plantilla
+  const yd=DB[currentYear]||{employees:{}};
+  const ed=yd.employees||{};
+  const allEmps=Object.entries(ed).filter(([,d])=>(d.wbs_codes||[]).length>0);
+  const availMonths=MO.filter(([mk])=>allEmps.some(([,d])=>(d.months||{})[mk]));
+  if(!availMonths.length){showToast('Sin datos para proyectar','err');return;}
+
+  const lastMonthNum=parseInt(availMonths[availMonths.length-1][0].split('-')[1]);
+  const remainingMonths=12-lastMonthNum;
+  const dataKeys=new Set(availMonths.map(([mk])=>mk));
+
+  const rows=allEmps.map(([key,d])=>{
+    const r={key,name:d.name||key,manager:d.manager||''};
+    let total7st=0,totalVacH=0,totalPermH=0,total750H=0;
+    MO.forEach(([mk])=>{
+      const m=(d.months||{})[mk]||{};
+      const h7=Object.keys(m).filter(k=>k.startsWith('atype_st_')).reduce((s,k)=>s+(m[k]||0),0);
+      r['h_'+mk]=h7;
+      if(dataKeys.has(mk)){total7st+=h7;totalVacH+=m.atype_120||0;totalPermH+=m.atype_123||0;total750H+=m.atype_750||0;}
+    });
+    r.total7st=total7st;
+    // Proyección: base fija de 166h/mes, solo se descuentan vacaciones pendientes (atype_120, 23d)
+    const absRemaining=Math.max(0,23*8-totalVacH);
+    const projRem=Math.max(0,BASE_H*remainingMonths-absRemaining);
+    r.projected=Math.round(total7st+projRem);
+    r.riskPct=Math.round(r.projected/BUDGET*100);
+    r.projMonthly=remainingMonths>0?Math.round(projRem/remainingMonths):0;
+    return r;
+  }).filter(r=>r.total7st>0).sort((a,b)=>b.riskPct-a.riskPct);
+
+  function heatBg(h,proj){
+    if(h<=0)return proj?'#f8f9fa':'#f0f0f0';
+    if(h<60)  return proj?'#dff0d8':'#c8e6c9';
+    if(h<100) return proj?'#f1f8e9':'#aed581';
+    if(h<130) return proj?'#fffde7':'#fff176';
+    if(h<155) return proj?'#fff3e0':'#ffcc80';
+    if(h<175) return proj?'#fce4ec':'#ff8a65';
+    return proj?'#ffcdd2':'#ef9a9a';
+  }
+  function heatFg(h,proj){
+    if(h<=0)return '#ccc';
+    if(h<60)return '#2e7d32';
+    if(h<100)return '#33691e';
+    if(h<130)return proj?'#b07800':'#7f6000';
+    if(h<155)return '#e65100';
+    return '#b71c1c';
+  }
+  function riskStyle(pct){
+    if(pct<90) return{bg:'#e8f5e9',fg:'#2e7d32',lbl:'✅ Bajo'};
+    if(pct<100)return{bg:'#fff8e1',fg:'#e65100',lbl:'🟡 Normal'};
+    if(pct<110)return{bg:'#fff3e0',fg:'#e65100',lbl:'⚠️ Alto'};
+    return{bg:'#ffebee',fg:'#b71c1c',lbl:'🔴 Crítico'};
+  }
+
+  const crit=rows.filter(r=>r.riskPct>=110).length;
+  const alto=rows.filter(r=>r.riskPct>=100&&r.riskPct<110).length;
+  const ok=rows.filter(r=>r.riskPct<100).length;
+  const avgProj=rows.length?Math.round(rows.reduce((s,r)=>s+r.projected,0)/rows.length):0;
+
+  let th=`<th style="padding:8px 10px;text-align:left;min-width:170px;position:sticky;left:0;background:#1c1c30;z-index:3">Empleado</th>`;
+  MO.forEach(([mk,ml])=>{
+    const isProj=!dataKeys.has(mk);
+    th+=`<th style="padding:8px 5px;text-align:center;min-width:42px;${isProj?'opacity:0.6;font-style:italic':''}">${ml}</th>`;
+  });
+  th+=`<th style="padding:8px 10px;text-align:center;min-width:85px;border-left:2px solid rgba(255,255,255,.2)">Proyección</th>
+       <th style="padding:8px 8px;text-align:center;min-width:90px">Progreso</th>
+       <th style="padding:8px 8px;text-align:center;min-width:75px">Riesgo</th>`;
+
+  let tb='';
+  rows.forEach((r,i)=>{
+    const risk=riskStyle(r.riskPct);
+    const over=r.projected-BUDGET;
+    const barPct=Math.min(100,r.riskPct);
+    const barCol=r.riskPct>=110?'#c0392b':r.riskPct>=100?'#e67e22':r.riskPct>=90?'#f39c12':'#27ae60';
+    tb+=`<tr style="background:${i%2?'#fafaf4':'#fff'};border-bottom:1px solid #f0f0e8">
+      <td style="padding:6px 10px;font-weight:600;font-size:12px;position:sticky;left:0;background:${i%2?'#fafaf4':'#fff'};z-index:1;white-space:nowrap">${r.name}</td>`;
+    MO.forEach(([mk])=>{
+      const isProj=!dataKeys.has(mk);
+      const h=isProj?r.projMonthly:(r['h_'+mk]||0);
+      tb+=`<td style="padding:4px 3px;text-align:center;background:${heatBg(h,isProj)};color:${heatFg(h,isProj)};font-size:11px;font-weight:${!isProj&&h>0?600:400}">
+        ${h>0?Math.round(h):'—'}</td>`;
+    });
+    tb+=`<td style="padding:6px 10px;text-align:center;border-left:2px solid #e0e0d8;font-weight:800;font-size:13px;color:${r.riskPct>=100?'#c0392b':'#1a1a1a'}">${r.projected.toLocaleString()}h</td>
+         <td style="padding:6px 8px;text-align:center">
+           <div style="background:#eee;border-radius:4px;height:9px;width:64px;overflow:hidden;display:inline-block;vertical-align:middle">
+             <div style="background:${barCol};width:${barPct}%;height:100%;border-radius:4px"></div>
+           </div>
+           <div style="font-size:10px;margin-top:2px;color:${r.riskPct>=100?'#c0392b':'#888'};font-weight:${r.riskPct>=100?700:400}">${r.riskPct}%${over>0?' <span style="color:#c0392b">(+'+over+'h)</span>':''}</div>
+         </td>
+         <td style="padding:6px 8px;text-align:center;background:${risk.bg};color:${risk.fg};font-weight:700;font-size:11px">${risk.lbl}</td>
+    </tr>`;
+  });
+
+  const thead=`<thead><tr style="background:#1c1c30;color:#fff;position:sticky;top:0;z-index:2">${th}</tr></thead>`;
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.onclick=e=>{if(e.target===bg)bg.remove();};
+  bg.innerHTML=`
+    <div class="modal-box" style="max-width:1350px;height:90vh;display:flex;flex-direction:column;overflow:hidden">
+      <div class="modal-hdr" style="flex-shrink:0">
+        <div class="modal-av" style="font-size:18px;background:linear-gradient(135deg,#e74c3c,#c0392b)">📈</div>
+        <div class="modal-info">
+          <div class="modal-title">Proyección Horas 7ST · Riesgo vs. 1.760h · FY${currentYear}</div>
+          <div class="modal-sub">Datos hasta <strong>${availMonths[availMonths.length-1][1]}</strong> · ${remainingMonths} meses a <strong>166h/mes</strong> · Descuento: <strong>23d vacaciones (atype 120)</strong> · No se descuentan: 3d permisos ni horas código 705</div>
+        </div>
+        <span class="modal-close" onclick="this.closest('.modal-bg').remove()">×</span>
+      </div>
+      <div style="display:flex;gap:20px;padding:9px 18px;background:#1c1c30;font-size:12px;flex-shrink:0;align-items:center;flex-wrap:wrap">
+        <span style="color:#ef9a9a;font-weight:700">🔴 Crítico (&gt;110%): ${crit}</span>
+        <span style="color:#ffcc80;font-weight:700">⚠️ Alto (100-110%): ${alto}</span>
+        <span style="color:#a5d6a7;font-weight:700">✅ Bajo control: ${ok}</span>
+        <span style="margin-left:auto;color:#7f8c8d;font-size:11px">Media equipo: ${avgProj}h proyectadas · Presupuesto: 1.760h</span>
+      </div>
+      <div style="padding:5px 14px;background:#f8f9fa;border-bottom:1px solid #e0e0d8;font-size:10px;color:#888;flex-shrink:0;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <strong>Escala calor h/mes:</strong>
+        <span style="background:#c8e6c9;padding:1px 7px;border-radius:3px;color:#2e7d32">&lt;60</span>
+        <span style="background:#aed581;padding:1px 7px;border-radius:3px;color:#33691e">60-100</span>
+        <span style="background:#fff176;padding:1px 7px;border-radius:3px;color:#7f6000">100-130</span>
+        <span style="background:#ffcc80;padding:1px 7px;border-radius:3px;color:#e65100">130-155</span>
+        <span style="background:#ff8a65;padding:1px 7px;border-radius:3px;color:#bf360c">155-175</span>
+        <span style="background:#ef9a9a;padding:1px 7px;border-radius:3px;color:#b71c1c">&gt;175</span>
+        <span style="margin-left:8px;font-style:italic">Columnas en cursiva = meses proyectados</span>
+      </div>
+      <div style="padding:5px 14px;background:#fff;border-bottom:1px solid #e0e0d8;flex-shrink:0;display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px">🔍</span>
+        <input id="riesgo-filter" type="text" placeholder="Buscar empleado…"
+          style="border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:12px;width:230px;outline:none;transition:border .15s"
+          onfocus="this.style.borderColor='#e74c3c'" onblur="this.style.borderColor='#ddd'">
+        <span id="riesgo-filter-cnt" style="font-size:11px;color:#aaa"></span>
+      </div>
+      <div style="flex:1;overflow:auto;min-height:0">
+        <table style="border-collapse:collapse;font-size:12px;min-width:900px">${thead}<tbody>${tb}</tbody></table>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector('#riesgo-filter').addEventListener('input',function(){
+    const q=this.value.toLowerCase().trim();
+    const trs=bg.querySelectorAll('tbody tr');
+    let n=0;
+    trs.forEach(tr=>{const match=!q||(tr.cells[0]?.textContent||'').toLowerCase().includes(q);tr.style.display=match?'':'none';if(match)n++;});
+    bg.querySelector('#riesgo-filter-cnt').textContent=q?n+' de '+rows.length+'':'';
+  });
+  const onKey=e=>{if(e.key==='Escape'){bg.remove();document.removeEventListener('keydown',onKey);}};
+  document.addEventListener('keydown',onKey);
+}
+
+// ── VACACIONES ───────────────────────────────────────────
+function showVacaciones(){
+  const VAC_D=23, PERM_D=3, H=8;
+  const yd=DB[currentYear]||{employees:{}};
+  const ed=yd.employees||{};
+  const allEmps=Object.entries(ed).filter(([,d])=>(d.wbs_codes||[]).length>0);
+  const availMonths=MO.filter(([mk])=>allEmps.some(([,d])=>(d.months||{})[mk]));
+
+  const vacRows=allEmps.map(([key,d])=>{
+    const vr={key,name:d.name||key,manager:d.manager||'',totalVac:0,totalPerm:0};
+    availMonths.forEach(([mk])=>{
+      const m=(d.months||{})[mk]||{};
+      vr['v_'+mk]=+((m.atype_120||0)/H).toFixed(2);
+      vr['p_'+mk]=+((m.atype_123||0)/H).toFixed(2);
+      vr.totalVac+=vr['v_'+mk];
+      vr.totalPerm+=vr['p_'+mk];
+    });
+    vr.pendVac=Math.max(0,+(VAC_D-vr.totalVac).toFixed(2));
+    vr.pendPerm=Math.max(0,+(PERM_D-vr.totalPerm).toFixed(2));
+    return vr;
+  }).sort((a,b)=>b.pendVac-a.pendVac||b.pendPerm-a.pendPerm);
+
+  function pct(taken,budget){return Math.min(100,Math.round(taken/budget*100));}
+  function bar(taken,budget){
+    const p=pct(taken,budget);
+    const fg=p>80?'#28a745':p>40?'#e6a817':'#dc3545';
+    return `<div style="background:#e0e0e0;border-radius:4px;height:7px;width:72px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:5px"><div style="background:${fg};width:${p}%;height:100%;border-radius:4px"></div></div>`;
+  }
+  function pendStyle(pend,budget){
+    const p=pct(budget-pend,budget);
+    if(p>80) return 'color:#155724;font-weight:700';
+    if(p>40) return 'color:#856404;font-weight:700';
+    return 'color:#721c24;font-weight:800';
+  }
+
+  let th=`<th style="padding:9px 10px;text-align:left;min-width:170px">Empleado</th>
+          <th style="padding:9px 10px;text-align:left;min-width:120px">Manager</th>`;
+  availMonths.forEach(([,ml])=>th+=`<th style="padding:9px 8px;text-align:center;min-width:44px">🌴<br><span style="font-size:9px;font-weight:400">${ml}</span></th>`);
+  th+=`<th style="padding:9px 10px;text-align:center;border-left:2px solid rgba(255,255,255,.2)">Vac. tomadas</th>
+       <th style="padding:9px 10px;text-align:center">Pendientes</th>
+       <th style="padding:9px 10px;text-align:center;border-left:2px solid rgba(255,255,255,.2)">Perm. tomados</th>
+       <th style="padding:9px 10px;text-align:center">Pendientes</th>`;
+
+  let tb='';
+  vacRows.forEach((r,i)=>{
+    tb+=`<tr style="background:${i%2?'#fafaf4':'#fff'};border-bottom:1px solid #f0f0e8">
+      <td style="padding:7px 10px;font-weight:600">${r.name}</td>
+      <td style="padding:7px 10px;font-size:11px;color:#888">${r.manager}</td>`;
+    availMonths.forEach(([mk])=>{
+      const v=r['v_'+mk]||0;
+      tb+=`<td style="padding:7px 8px;text-align:center;color:${v>0?'#219653':'#ccc'};font-weight:${v>0?700:400}">${v>0?(v%1===0?v:v.toFixed(1)):'—'}</td>`;
+    });
+    tb+=`<td style="padding:7px 10px;text-align:center;border-left:2px solid #f0f0e8">
+           <span style="font-weight:700">${r.totalVac>0?r.totalVac.toFixed(1)+'d':'—'}</span>
+           ${bar(r.totalVac,VAC_D)}
+           <span style="font-size:9px;color:#aaa;margin-left:3px">${pct(r.totalVac,VAC_D)}%</span>
+         </td>
+         <td style="padding:7px 10px;text-align:center">
+           <span style="${pendStyle(r.pendVac,VAC_D)}">${r.pendVac>0?r.pendVac.toFixed(1)+'d':'✅'}</span>
+         </td>
+         <td style="padding:7px 10px;text-align:center;border-left:2px solid #f0f0e8;color:${r.totalPerm>0?'#219653':'#ccc'};font-weight:${r.totalPerm>0?700:400}">
+           ${r.totalPerm>0?r.totalPerm.toFixed(1)+'d':'—'}
+         </td>
+         <td style="padding:7px 10px;text-align:center">
+           <span style="${pendStyle(r.pendPerm,PERM_D)}">${r.pendPerm>0?r.pendPerm.toFixed(1)+'d':'✅'}</span>
+         </td></tr>`;
+  });
+
+  const thead=`<thead><tr style="background:#1c1c30;color:#fff;position:sticky;top:0;z-index:2">${th}</tr></thead>`;
+  const content=`<div style="padding:5px 14px;background:#fff;border-bottom:1px solid #e0e0d8;flex-shrink:0;display:flex;align-items:center;gap:8px">
+    <span style="font-size:13px">🔍</span>
+    <input id="vac-filter" type="text" placeholder="Buscar empleado…"
+      style="border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:12px;width:230px;outline:none;transition:border .15s"
+      onfocus="this.style.borderColor='#2980b9'" onblur="this.style.borderColor='#ddd'">
+    <span id="vac-filter-cnt" style="font-size:11px;color:#aaa"></span>
+  </div>
+  <div style="padding:8px 14px;background:#e8f4fd;border-bottom:1px solid #b8daff;font-size:11px;color:#004085;flex-shrink:0">
+    📌 Presupuesto anual: <strong>${VAC_D}d vacaciones</strong> (atype 120) · <strong>${PERM_D}d permisos retribuidos</strong> (atype 123) · 1 día = 8h &nbsp;·&nbsp;
+    Barra: 🔴 &lt;40% · 🟡 40–80% · 🟢 &gt;80% disfrutados &nbsp;·&nbsp; Ordenado por más días pendientes primero
+  </div>
+  <div style="flex:1;overflow:auto;min-height:0">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">${thead}<tbody>${tb}</tbody></table>
+  </div>`;
+
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.onclick=e=>{if(e.target===bg)bg.remove();};
+  bg.innerHTML=`
+    <div class="modal-box" style="max-width:1150px;height:88vh;display:flex;flex-direction:column;overflow:hidden">
+      <div class="modal-hdr" style="flex-shrink:0">
+        <div class="modal-av" style="font-size:18px;background:linear-gradient(135deg,#2980b9,#1a6fa0)">🌴</div>
+        <div class="modal-info">
+          <div class="modal-title">Vacaciones &amp; Permisos Retribuidos · FY${currentYear}</div>
+          <div class="modal-sub">${vacRows.length} empleados · ${vacRows.filter(r=>r.pendVac===0).length} han agotado vacaciones · ${vacRows.filter(r=>r.totalVac===0).length} sin vacaciones registradas</div>
+        </div>
+        <span class="modal-close" onclick="this.closest('.modal-bg').remove()">×</span>
+      </div>
+      ${content}
+    </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector('#vac-filter').addEventListener('input',function(){
+    const q=this.value.toLowerCase().trim();
+    const trs=bg.querySelectorAll('tbody tr');
+    let n=0;
+    trs.forEach(tr=>{const match=!q||(tr.cells[0]?.textContent||'').toLowerCase().includes(q);tr.style.display=match?'':'none';if(match)n++;});
+    bg.querySelector('#vac-filter-cnt').textContent=q?n+' de '+vacRows.length+'':'';
+  });
+  const onKey=e=>{if(e.key==='Escape'){bg.remove();document.removeEventListener('keydown',onKey);}};
+  document.addEventListener('keydown',onKey);
+}
+
+// ── INFORME HISTÓRICO ────────────────────────────────────
+function showHistorico(){
+  const yd=DB[currentYear]||{employees:{}};
+  const ed=yd.employees||{};
+  const allEmps=Object.entries(ed).filter(([,d])=>(d.wbs_codes||[]).length>0);
+  const availMonths=MO.filter(([mk])=>allEmps.some(([,d])=>(d.months||{})[mk]));
+
+  const rows=allEmps.map(([key,d])=>{
+    const r={key,name:d.name||key,manager:d.manager||'',ytd:0};
+    availMonths.forEach(([mk])=>{
+      const m=(d.months||{})[mk]||{};
+      const h=Object.keys(m).filter(k=>k.startsWith('atype_st_')).reduce((s,k)=>s+(m[k]||0),0);
+      r[mk]=h;r.ytd+=h;
+    });
+    const last2=availMonths.slice(-2).map(([mk])=>mk);
+    const n2=last2.filter(mk=>(r[mk]||0)>0).length;
+    r.status=n2===2?'🟢':n2===1?'🟡':'🔴';
+    return r;
+  }).filter(r=>r.ytd>0).sort((a,b)=>a.name.localeCompare(b.name));
+
+  const sinBill=rows.filter(r=>r.status==='🔴');
+  const parcial=rows.filter(r=>r.status==='🟡');
+
+  function tblHdr(cols){
+    return `<thead><tr style="background:#1c1c30;color:#fff;position:sticky;top:0;z-index:2">${cols}</tr></thead>`;
+  }
+  function buildResumen(){
+    let th=`<th style="padding:9px 10px;text-align:left;min-width:180px">Empleado</th><th style="padding:9px 10px;text-align:left;min-width:130px">Manager</th>`;
+    availMonths.forEach(([,ml])=>th+=`<th style="padding:9px 10px;text-align:center">${ml}</th>`);
+    th+=`<th style="padding:9px 10px;text-align:center">YTD</th><th style="padding:9px 10px;text-align:center">Estado</th>`;
+    let tb='';
+    rows.forEach((r,i)=>{
+      tb+=`<tr style="background:${i%2?'#fafaf4':'#fff'};border-bottom:1px solid #f0f0e8">
+        <td style="padding:7px 10px;font-weight:600">${r.name}</td>
+        <td style="padding:7px 10px;font-size:11px;color:#888">${r.manager}</td>`;
+      availMonths.forEach(([mk])=>{
+        const v=r[mk]||0;
+        tb+=`<td style="padding:7px 10px;text-align:center;font-weight:${v>0?700:400};color:${v>0?'#1a1a1a':'#ccc'}">${v>0?v.toFixed(1):'—'}</td>`;
+      });
+      tb+=`<td style="padding:7px 10px;text-align:center;font-weight:800;color:${r.ytd>0?'#219653':'#ccc'}">${r.ytd>0?r.ytd.toFixed(1)+'h':'—'}</td>
+           <td style="padding:7px 10px;text-align:center;font-size:16px">${r.status}</td></tr>`;
+    });
+    return `<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px">${tblHdr(th)}<tbody>${tb}</tbody></table>`;
+  }
+
+  function buildSinBill(){
+    if(!sinBill.length) return '<div style="padding:40px;text-align:center;color:#27ae60;font-size:15px;font-weight:700">✅ Todos los empleados tienen horas 7ST en los últimos 2 meses.</div>';
+    let th=`<th style="padding:9px 10px;text-align:left">Empleado</th><th style="padding:9px 10px;text-align:left">Manager</th>`;
+    availMonths.forEach(([,ml])=>th+=`<th style="padding:9px 10px;text-align:center">${ml}</th>`);
+    th+=`<th style="padding:9px 10px;text-align:center">YTD</th>`;
+    let tb='';
+    sinBill.forEach((r,i)=>{
+      // Find last month they had hours to highlight it
+      const lastActive=availMonths.slice().reverse().find(([mk])=>(r[mk]||0)>0);
+      tb+=`<tr style="background:${i%2?'#fff8f8':'#fff'};border-bottom:1px solid #f0e0e0">
+        <td style="padding:8px 10px;font-weight:600;color:#c0392b">${r.name}</td>
+        <td style="padding:8px 10px;font-size:11px;color:#888">${r.manager}</td>`;
+      availMonths.forEach(([mk,ml])=>{
+        const v=r[mk]||0;
+        const isLast=lastActive&&lastActive[0]===mk;
+        tb+=`<td style="padding:8px 10px;text-align:center;${isLast?'background:#fff3cd;font-weight:700;color:#856404':''}${!isLast&&v===0?'color:#ddd;font-size:11px':''}">${v>0?v.toFixed(1)+'h':'—'}</td>`;
+      });
+      tb+=`<td style="padding:8px 10px;text-align:center;font-weight:800;color:${r.ytd>0?'#856404':'#ccc'}">${r.ytd>0?r.ytd.toFixed(1)+'h':'—'}</td></tr>`;
+    });
+    const thead=`<thead><tr style="background:#c0392b;color:#fff;position:sticky;top:0;z-index:2">${th}</tr></thead>`;
+    return `<table style="width:100%;border-collapse:collapse;font-size:12px">${thead}<tbody>${tb}</tbody></table>`;
+  }
+
+  function buildDetalle(){
+    let th1=`<th style="padding:8px 10px;text-align:left;min-width:160px" rowspan="2">Empleado</th>`;
+    let th2='';
+    availMonths.forEach(([,ml])=>{
+      th1+=`<th colspan="3" style="padding:8px 5px;text-align:center;border-left:1px solid rgba(255,255,255,0.15)">${ml}</th>`;
+      th2+=`<th style="padding:4px 5px;text-align:center;color:#6fcf8a;font-size:10px">7ST</th>
+            <th style="padding:4px 5px;text-align:center;color:#e87070;font-size:10px">Otro</th>
+            <th style="padding:4px 5px;text-align:center;color:#93c4e8;font-size:10px">Aus.</th>`;
+    });
+    const thead=`<thead>
+      <tr style="background:#1c1c30;color:#fff;position:sticky;top:0;z-index:2">${th1}</tr>
+      <tr style="background:#2a2a45;position:sticky;top:33px;z-index:2">${th2}</tr>
+    </thead>`;
+    let tb='';
+    rows.forEach((r,i)=>{
+      const d=ed[r.key];
+      tb+=`<tr style="background:${i%2?'#fafaf4':'#fff'};border-bottom:1px solid #f0f0e8">
+        <td style="padding:6px 10px;font-weight:600;font-size:11.5px">${r.name}</td>`;
+      availMonths.forEach(([mk])=>{
+        const m=(d.months||{})[mk]||{};
+        const h7=Object.keys(m).filter(k=>k.startsWith('atype_st_')).reduce((s,k)=>s+(m[k]||0),0);
+        const hX=Object.keys(m).filter(k=>k.match(/^atype_4\d\d$/)).reduce((s,k)=>s+(m[k]||0),0);
+        const hA=(m.atype_110||0)+(m.atype_120||0)+(m.atype_121||0)+(m.atype_123||0);
+        tb+=`<td style="padding:5px;text-align:center;font-size:11px;color:${h7>0?'#219653':'#ccc'};font-weight:${h7>0?700:400}">${h7>0?h7.toFixed(1):'—'}</td>
+             <td style="padding:5px;text-align:center;font-size:11px;color:${hX>0?'#c0392b':'#ccc'}">${hX>0?hX.toFixed(1):'—'}</td>
+             <td style="padding:5px;text-align:center;font-size:11px;color:${hA>0?'#2980b9':'#ccc'}">${hA>0?hA.toFixed(1):'—'}</td>`;
+      });
+      tb+=`</tr>`;
+    });
+    return `<table style="width:100%;border-collapse:collapse;font-size:11.5px;min-width:600px">${thead}<tbody>${tb}</tbody></table>`;
+  }
+
+
+
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.onclick=e=>{if(e.target===bg)bg.remove();};
+  bg.innerHTML=`
+    <div class="modal-box" style="max-width:1200px;height:88vh;display:flex;flex-direction:column;overflow:hidden">
+      <div class="modal-hdr" style="flex-shrink:0">
+        <div class="modal-av" style="font-size:18px;background:linear-gradient(135deg,#219653,#1a7a44)">📊</div>
+        <div class="modal-info">
+          <div class="modal-title">Informe Histórico · Horas 7ST · FY${currentYear}</div>
+          <div class="modal-sub">${rows.length} empleados · ${availMonths.length} meses · 🟢 ${rows.length-sinBill.length-parcial.length} activos · 🟡 ${parcial.length} parciales · 🔴 ${sinBill.length} sin facturar</div>
+        </div>
+        <span class="modal-close" onclick="this.closest('.modal-bg').remove()">×</span>
+      </div>
+      <div style="display:flex;border-bottom:2px solid #e0e0d8;background:#fafaf4;padding:0 14px;flex-shrink:0;overflow-x:auto;gap:0">
+        <button class="hist-tab active" data-tab="resumen">📋 Resumen</button>
+        <button class="hist-tab" data-tab="sinbill">⚠️ Sin Facturación (${sinBill.length})</button>
+        <button class="hist-tab" data-tab="detalle">📊 Detalle por Mes</button>
+      </div>
+      <div style="padding:5px 14px;background:#fff;border-bottom:1px solid #e0e0d8;flex-shrink:0;display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px">🔍</span>
+        <input id="hist-filter" type="text" placeholder="Buscar empleado…"
+          style="border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:12px;width:230px;outline:none;transition:border .15s"
+          onfocus="this.style.borderColor='#219653'" onblur="this.style.borderColor='#ddd'">
+        <span id="hist-filter-cnt" style="font-size:11px;color:#aaa"></span>
+      </div>
+      <div id="hp-resumen" style="flex:1;overflow:auto;min-height:0"></div>
+      <div id="hp-sinbill" style="flex:1;overflow:auto;min-height:0;display:none"></div>
+      <div id="hp-detalle" style="flex:1;overflow:auto;min-height:0;display:none"></div>
+    </div>`;
+  document.body.appendChild(bg);
+
+  // Lazy-render panels (pestaña activa primero, resto al cambiar)
+  const panels={resumen:buildResumen,sinbill:buildSinBill,detalle:buildDetalle};
+  const rendered=new Set();
+  let histFilterQ='';
+  function applyHistFilter(tab){
+    const q=histFilterQ;
+    const panel=bg.querySelector('#hp-'+tab);
+    if(!panel)return;
+    const trs=panel.querySelectorAll('tbody tr');
+    let n=0;
+    trs.forEach(tr=>{const match=!q||(tr.cells[0]?.textContent||'').toLowerCase().includes(q);tr.style.display=match?'':'none';if(match)n++;});
+    bg.querySelector('#hist-filter-cnt').textContent=q&&trs.length?n+' de '+trs.length+'':'';
+  }
+  function renderPanel(tab){
+    if(rendered.has(tab))return;
+    rendered.add(tab);
+    bg.querySelector('#hp-'+tab).innerHTML=panels[tab]();
+  }
+  renderPanel('resumen');
+  applyHistFilter('resumen');
+
+  bg.querySelector('#hist-filter').addEventListener('input',function(){
+    histFilterQ=this.value.toLowerCase().trim();
+    const activeTab=bg.querySelector('.hist-tab.active')?.dataset.tab||'resumen';
+    applyHistFilter(activeTab);
+  });
+
+  const allPanels=[bg.querySelector('#hp-resumen'),bg.querySelector('#hp-sinbill'),bg.querySelector('#hp-detalle')];
+  bg.querySelectorAll('.hist-tab').forEach(btn=>{
+    btn.onclick=()=>{
+      bg.querySelectorAll('.hist-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      allPanels.forEach(p=>p.style.display='none');
+      const tab=btn.dataset.tab;
+      const panel=bg.querySelector('#hp-'+tab);
+      panel.style.display='';
+      renderPanel(tab);
+      applyHistFilter(tab);
+    };
+  });
+  const onKey=e=>{if(e.key==='Escape'){bg.remove();document.removeEventListener('keydown',onKey);}};
+  document.addEventListener('keydown',onKey);
+}
+
+// ── CONTROL LABOR · HORAS REALES ─────────────────────────
+async function showActual(){
+  // Si hay carpeta conectada y no hay datos reales, intentar cargar ahora
+  if(folderHandle && (!actualData || actualData._seed)){
+    await autoLoadActual(folderHandle);
+  }
+  // Si sigue sin haber datos reales, usar SEED con aviso
+  if(!actualData){
+    actualData=JSON.parse(JSON.stringify(ACTUAL_SEED));
+    actualData._seed=true;
+  }
+  showActualModal();
+}
+
+function exportActualSeed(){
+  if(!actualData||actualData._seed){showToast('Carga primero el fichero real con "📂 Cargar fichero real"','err');return;}
+  const seed={file:actualData.file,months:actualData.months,employees:{}};
+  Object.entries(actualData.employees).forEach(([eid,d])=>{
+    const months={};
+    Object.entries(d.months).forEach(([mk,h])=>{if(h>0)months[mk]=Math.round(h*100)/100;});
+    if(Object.keys(months).length) seed.employees[eid]={months};
+  });
+  const json=JSON.stringify(seed,null,2);
+  // Mostrar en un modal para copiar
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.onclick=e=>{if(e.target===bg)bg.remove();};
+  bg.innerHTML=`
+    <div class="modal-box" style="max-width:700px;height:80vh;display:flex;flex-direction:column;overflow:hidden">
+      <div class="modal-hdr" style="flex-shrink:0">
+        <div class="modal-av" style="font-size:18px;background:linear-gradient(135deg,#27ae60,#1e8449)">📤</div>
+        <div class="modal-info">
+          <div class="modal-title">Exportar SEED · Control Labor</div>
+          <div class="modal-sub">Copia este JSON y pégalo a Claude para actualizar el HTML</div>
+        </div>
+        <span class="modal-close" onclick="this.closest('.modal-bg').remove()">×</span>
+      </div>
+      <div style="padding:10px 14px;background:#f0f9f0;border-bottom:1px solid #c3e6cb;font-size:11px;color:#155724;flex-shrink:0">
+        📋 <strong>Instrucciones:</strong> Pulsa "Copiar" → pégalo en el chat con Claude → él actualizará el ACTUAL_SEED del HTML automáticamente.
+      </div>
+      <div style="flex:1;overflow:auto;min-height:0;padding:10px 14px">
+        <textarea id="seed-export-ta" style="width:100%;height:100%;font-family:monospace;font-size:11px;border:1px solid #ddd;border-radius:6px;padding:10px;resize:none;background:#1c1c30;color:#a8d8a8">${json}</textarea>
+      </div>
+      <div style="padding:10px 14px;flex-shrink:0;display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="navigator.clipboard.writeText(document.getElementById('seed-export-ta').value).then(()=>showToast('✅ Copiado al portapapeles','ok'))" style="background:#27ae60;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-weight:700;font-size:12px">📋 Copiar JSON</button>
+        <button onclick="this.closest('.modal-bg').remove()" style="background:#f0f0e8;color:#555;border:1px solid #ddd;padding:8px 14px;border-radius:7px;cursor:pointer;font-size:12px">Cerrar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+}
+
+async function loadActualFile(){
+  // Cargar fichero real Control Labor manualmente (sustituye el SEED)
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='.xlsx,.xls';
+  inp.onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    document.querySelector('.modal-bg')?.remove();
+    await parseActualFile(f);
+    if(actualData) showActualModal();
+  };
+  inp.click();
+}
+
+function showActualModal(){
+  if(!actualData)return;
+  const {employees,months,file}=actualData;
+  const ed=(DB[currentYear]||{employees:{}}).employees||{};
+
+  const empList=Object.entries(employees).map(([eid,d])=>({
+    eid,
+    name:ed[eid]?.name||d.name||'',
+    city:d.city||'',
+    offering:d.offering||'',
+    inDB:!!ed[eid],
+    months:d.months,
+    total:Object.values(d.months).reduce((s,h)=>s+h,0)
+  })).sort((a,b)=>{
+    // Primero los que están en CADO, luego No Cado; dentro de cada grupo, por nombre
+    if(a.inDB!==b.inDB) return a.inDB?-1:1;
+    return (a.name||a.eid).localeCompare(b.name||b.eid);
+  });
+
+  // Helper: horas 7ST del CADO para un empleado y mes
+  function getCadoH(eid,mk){
+    const m=(ed[eid]?.months||{})[mk]||{};
+    return Object.keys(m).filter(k=>k.startsWith('atype_st_')).reduce((s,k)=>s+(m[k]||0),0);
+  }
+  // Helper: celda comparativa con color por desviación >2%
+  function devCell(act,cad,isTotal,borderL){
+    const bl=borderL?'border-left:2px solid #e0e0d8;':'';
+    const pad=isTotal?'padding:5px 8px':'padding:4px 4px';
+    const fs=isTotal?'font-size:12px;font-weight:800':'font-size:11px;font-weight:600';
+    // Actual cell
+    let bgA='',fgA=act>0?'#1a1a1a':'#ccc';
+    if(cad>0&&act>0){
+      const dev=Math.abs(act-cad)/cad*100;
+      if(dev>2){bgA='background:#fde8e8;';fgA='#c0392b';}
+      else{bgA='background:#e8f5e9;';fgA='#1a7a44';}
+    }
+    const actTxt=act>0?(isTotal?act.toFixed(1)+'h':act.toFixed(1)):'—';
+    const cadTxt=cad>0?(isTotal?cad.toFixed(1)+'h':cad.toFixed(1)):'—';
+    return `<td style="${pad};text-align:center;${fs};${bgA}color:${fgA};${bl}">${actTxt}</td>`+
+           `<td style="${pad};text-align:center;${fs};color:${cad>0?'#2980b9':'#ccc'}">${cadTxt}</td>`;
+  }
+
+  // Cabecera doble fila
+  const stickyHdr='background:#1c1c30';
+  let th1=`<th rowspan="2" style="padding:8px 10px;text-align:left;min-width:90px;position:sticky;left:0;${stickyHdr};z-index:3">EID</th>
+           <th rowspan="2" style="padding:8px 10px;text-align:left;min-width:190px;position:sticky;left:90px;${stickyHdr};z-index:3">Empleado</th>`;
+  let th2='';
+  months.forEach(mk=>{
+    const ml=MN[parseInt(mk.split('-')[1])]||mk;
+    th1+=`<th colspan="2" style="padding:6px 4px;text-align:center;border-left:1px solid rgba(255,255,255,.15)">${ml}<span style="font-size:9px;font-weight:400;opacity:.6;margin-left:3px">${mk.split('-')[0]}</span></th>`;
+    th2+=`<th style="padding:4px 4px;text-align:center;font-size:10px;color:#f0c070;border-left:1px solid rgba(255,255,255,.1)">Actual</th>
+          <th style="padding:4px 4px;text-align:center;font-size:10px;color:#7ec8f0">CADO</th>`;
+  });
+  th1+=`<th colspan="2" style="padding:6px 8px;text-align:center;border-left:2px solid rgba(255,255,255,.25)">Total</th>`;
+  th2+=`<th style="padding:4px 6px;text-align:center;font-size:10px;color:#f0c070;border-left:2px solid rgba(255,255,255,.2)">Actual</th>
+        <th style="padding:4px 6px;text-align:center;font-size:10px;color:#7ec8f0">CADO</th>`;
+
+  // Filas
+  let tb='';
+  empList.forEach((r,i)=>{
+    const bg=i%2?'#fafaf4':'#fff';
+    const cityStr=r.city?` <span style="color:#888;font-weight:400">(${r.city})</span>`:'';
+    const offStr=r.offering?` <span style="font-size:10px;background:#e8f0fe;color:#3b5bdb;padding:1px 5px;border-radius:3px;font-weight:600">${r.offering}</span>`:'';
+    tb+=`<tr style="background:${bg};border-bottom:1px solid #f0f0e8">
+      <td style="padding:6px 10px;font-size:11px;color:#888;position:sticky;left:0;background:${bg};z-index:1">${r.eid}</td>
+      <td style="padding:6px 10px;font-weight:600;font-size:12px;position:sticky;left:90px;background:${bg};z-index:1;white-space:nowrap">
+        ${r.name?`${r.name}${cityStr}${offStr}`:`<span style="color:#888;font-style:italic">${r.eid}</span>`}
+        ${!r.inDB?'<span style="margin-left:5px;font-size:9px;background:#f8d7da;color:#721c24;padding:1px 5px;border-radius:3px;font-weight:700">No Cado</span>':''}
+      </td>`;
+    let totalCado=0;
+    months.forEach(mk=>{
+      const act=r.months[mk]||0;
+      const cad=r.inDB?getCadoH(r.eid,mk):0;
+      totalCado+=cad;
+      tb+=devCell(act,cad,false,false);
+    });
+    tb+=devCell(r.total,totalCado,true,true);
+    tb+=`</tr>`;
+  });
+
+  const noMatch=empList.filter(r=>!ed[r.eid]).length;
+  const thead=`<thead>
+    <tr style="background:#1c1c30;color:#fff;position:sticky;top:0;z-index:2">${th1}</tr>
+    <tr style="background:#252540;color:#fff;position:sticky;top:33px;z-index:2">${th2}</tr>
+  </thead>`;
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.onclick=e=>{if(e.target===bg)bg.remove();};
+  bg.innerHTML=`
+    <div class="modal-box" style="max-width:1500px;height:90vh;display:flex;flex-direction:column;overflow:hidden">
+      <div class="modal-hdr" style="flex-shrink:0">
+        <div class="modal-av" style="font-size:18px;background:linear-gradient(135deg,#7b2d8b,#5c1f6e)" id="actual-modal-av">📋</div>
+        <div class="modal-info">
+          <div class="modal-title">Horas Reales Facturadas · Control Labor · ${file}${actualData._seed?' <span style="background:#e67e22;color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;vertical-align:middle">EJEMPLO</span>':''}</div>
+          <div class="modal-sub">${actualData._seed?'⚠️ Mostrando datos de ejemplo — selecciona la carpeta OneDrive para cargar el fichero real · ':''} ${empList.length} empleados · ${months.length} meses${noMatch>0?` · <span style="color:#e67e22">${noMatch} sin match en dashboard</span>`:''}</div>
+        </div>
+        <button style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;margin-left:auto;margin-right:6px" onclick="loadActualFile()" title="Cargar fichero Control Labor real">📂 Cargar fichero real</button>
+        <button style="background:rgba(100,200,120,.2);border:1px solid rgba(100,200,120,.4);color:#a0f0b0;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;margin-right:6px" onclick="exportActualSeed()" title="Genera el código SEED para actualizar el HTML">📤 Exportar SEED</button>
+        <button style="background:rgba(220,60,50,.3);border:1px solid rgba(255,100,80,.3);color:#ffaaaa;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;margin-right:10px" onclick="actualData=null;this.closest('.modal-bg').remove();showToast('Datos borrados','ok')">🗑 Reset</button>
+        <span class="modal-close" onclick="this.closest('.modal-bg').remove()">×</span>
+      </div>
+      <div style="padding:5px 14px;background:#fff;border-bottom:1px solid #e0e0d8;flex-shrink:0;display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px">🔍</span>
+        <input id="actual-filter" type="text" placeholder="Buscar empleado o EID…"
+          style="border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:12px;width:250px;outline:none;transition:border .15s"
+          onfocus="this.style.borderColor='#7b2d8b'" onblur="this.style.borderColor='#ddd'">
+        <span id="actual-filter-cnt" style="font-size:11px;color:#aaa"></span>
+        <span style="margin-left:auto;font-size:10px;color:#bbb;display:flex;align-items:center;gap:8px">
+          <span style="background:#e8f5e9;color:#1a7a44;padding:1px 6px;border-radius:3px">✓ ≤2% desv.</span>
+          <span style="background:#fde8e8;color:#c0392b;padding:1px 6px;border-radius:3px">✗ &gt;2% desv.</span>
+          <span style="color:#7ec8f0">CADO = horas 7ST imputadas</span>
+        </span>
+      </div>
+      <div style="flex:1;overflow:auto;min-height:0">
+        <table style="border-collapse:collapse;font-size:12px;min-width:700px">${thead}<tbody>${tb}</tbody></table>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector('#actual-filter').addEventListener('input',function(){
+    const q=this.value.toLowerCase().trim();
+    const trs=bg.querySelectorAll('tbody tr');
+    let n=0;
+    trs.forEach(tr=>{
+      const eid=(tr.cells[0]?.textContent||'').toLowerCase();
+      const name=(tr.cells[1]?.textContent||'').toLowerCase();
+      const match=!q||eid.includes(q)||name.includes(q);
+      tr.style.display=match?'':'none';if(match)n++;
+    });
+    bg.querySelector('#actual-filter-cnt').textContent=q?n+' de '+empList.length+'':'';
+  });
+  const onKey=e=>{if(e.key==='Escape'){bg.remove();document.removeEventListener('keydown',onKey);}};
+  document.addEventListener('keydown',onKey);
+}
 </script>
 </body>
 </html>
