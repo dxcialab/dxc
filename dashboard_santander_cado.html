@@ -1431,7 +1431,7 @@ async function selectFolder(){
       // Final resolution pass: ensure every employee has their latest-month manager
       Object.keys(DB).forEach(y=>resolveManagers(y));
       saveDB();
-      setFolderOK(h.name); render(); updateTags();
+      setFolderOK(h.name); buildPills(); initSelects(); render(); updateTags();
     }
     else { log('⚠️ No se encontraron ficheros CADO_cierre_.xlsx en la carpeta o subcarpetas','');  }
     // Auto-cargar Control Labor si existe en la carpeta
@@ -1496,7 +1496,7 @@ function setupDropZone(){
 function handleFiles(files){
   const xls=files.filter(f=>f.name.endsWith('.xlsx')&&f.name.includes('CADO'));
   if(!xls.length){showToast('No hay ficheros CADO .xlsx','err');return;}
-  Promise.all(xls.map(f=>processFile(f,false))).then(()=>{render();updateTags();});
+  Promise.all(xls.map(f=>processFile(f,false))).then(()=>{buildPills();initSelects();render();updateTags();});
 }
 
 // ── FILE PROCESSING ──────────────────────────────────────────────────
